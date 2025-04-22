@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import AuthCheck from "./components/auth/AuthCheck";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,13 +35,41 @@ const App = () => (
         
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/vehicles" element={<Vehicles />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/maintenance" element={<Maintenance />} />
-          <Route path="/garages" element={<Garages />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/vehicles" element={
+            <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+              <Vehicles />
+            </AuthCheck>
+          } />
+          <Route path="/users" element={
+            <AuthCheck requiredRoles={['admin', 'manager']}>
+              <Users />
+            </AuthCheck>
+          } />
+          <Route path="/maintenance" element={
+            <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+              <Maintenance />
+            </AuthCheck>
+          } />
+          <Route path="/garages" element={
+            <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+              <Garages />
+            </AuthCheck>
+          } />
+          <Route path="/notifications" element={
+            <AuthCheck>
+              <Notifications />
+            </AuthCheck>
+          } />
+          <Route path="/settings" element={
+            <AuthCheck requiredRoles={['admin']}>
+              <Settings />
+            </AuthCheck>
+          } />
+          <Route path="/profile" element={
+            <AuthCheck>
+              <Profile />
+            </AuthCheck>
+          } />
         </Route>
         
         <Route path="*" element={<NotFound />} />

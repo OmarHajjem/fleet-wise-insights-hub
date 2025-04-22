@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
-import AuthCheck from "@/components/auth/AuthCheck";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Types
 interface Vehicle {
@@ -82,6 +81,10 @@ export default function Vehicles() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { role, isLoading: roleLoading } = useUserRole();
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
+  const canEdit = isAdmin || isManager;
   
   // Fetch vehicles data
   const { data: vehicles, isLoading: isLoadingVehicles, error: vehiclesError } = useQuery({
@@ -234,37 +237,6 @@ export default function Vehicles() {
   // Gestion des erreurs
   if (vehiclesError) {
     return (
-      <AuthCheck>
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Gestion des véhicules</h1>
-              <p className="text-muted-foreground">
-                Gérer votre flotte de véhicules et leurs informations.
-              </p>
-            </div>
-          </div>
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-10">
-              <div className="text-center text-red-500 mb-4">
-                <X className="h-12 w-12 mx-auto mb-2" />
-                <h2 className="text-xl font-semibold">Erreur de chargement</h2>
-              </div>
-              <p className="text-muted-foreground mb-6">
-                Une erreur s'est produite lors du chargement des véhicules. Veuillez réessayer.
-              </p>
-              <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['vehicles'] })}>
-                Réessayer
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </AuthCheck>
-    );
-  }
-
-  return (
-    <AuthCheck>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
@@ -273,6 +245,35 @@ export default function Vehicles() {
               Gérer votre flotte de véhicules et leurs informations.
             </p>
           </div>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <div className="text-center text-red-500 mb-4">
+              <X className="h-12 w-12 mx-auto mb-2" />
+              <h2 className="text-xl font-semibold">Erreur de chargement</h2>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Une erreur s'est produite lors du chargement des véhicules. Veuillez réessayer.
+            </p>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['vehicles'] })}>
+              Réessayer
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestion des véhicules</h1>
+          <p className="text-muted-foreground">
+            Gérer votre flotte de véhicules et leurs informations.
+          </p>
+        </div>
+        {canEdit && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -364,152 +365,156 @@ export default function Vehicles() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Aperçu de la flotte</CardTitle>
-            <CardDescription>
-              Vue d'ensemble des {isLoadingVehicles ? "..." : vehicles?.length || 0} véhicules de votre flotte
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher un véhicule..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                />
-              </div>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Immatriculation</TableHead>
-                    <TableHead>Modèle</TableHead>
-                    <TableHead>Année</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Conducteur</TableHead>
-                    <TableHead>Dernière maintenance</TableHead>
-                    <TableHead>Niveau carburant</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoadingVehicles ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Loader className="h-8 w-8 mb-2 animate-spin" />
-                          <p>Chargement des véhicules...</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredVehicles.length > 0 ? (
-                    filteredVehicles.map((vehicle) => (
-                      <TableRow key={vehicle.id}>
-                        <TableCell>
-                          <div className="font-medium">{vehicle.license_plate}</div>
-                        </TableCell>
-                        <TableCell>{vehicle.model}</TableCell>
-                        <TableCell>{vehicle.year}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={`${
-                              statusLabels[vehicle.status].color
-                            }`}
-                          >
-                            {statusLabels[vehicle.status].label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getDriverName(vehicle.driver_id)}</TableCell>
-                        <TableCell>{formatDate(vehicle.last_maintenance)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-full rounded-full bg-muted">
-                              <div
-                                className={`h-full rounded-full ${
-                                  vehicle.fuel_level < 20
-                                    ? "bg-red-500"
-                                    : vehicle.fuel_level < 50
-                                    ? "bg-amber-500"
-                                    : "bg-green-500"
-                                }`}
-                                style={{ width: `${vehicle.fuel_level}%` }}
-                              />
-                            </div>
-                            <span className="text-xs">{vehicle.fuel_level}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Actions</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                              <DropdownMenuItem>Modifier</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => navigate(`/maintenance?vehicle=${vehicle.id}`)}>
-                                Planifier maintenance
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {vehicle.status === 'active' && (
-                                <DropdownMenuItem 
-                                  className="text-amber-600"
-                                  onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'maintenance' })}
-                                >
-                                  Mettre en maintenance
-                                </DropdownMenuItem>
-                              )}
-                              {vehicle.status === 'maintenance' && (
-                                <DropdownMenuItem 
-                                  className="text-green-600"
-                                  onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'active' })}
-                                >
-                                  Remettre en service
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'inactive' })}
-                              >
-                                {vehicle.status === 'inactive' ? "Déjà désactivé" : "Désactiver"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Car className="h-8 w-8 mb-2 opacity-50" />
-                          <p>Aucun véhicule trouvé</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        )}
       </div>
-    </AuthCheck>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Aperçu de la flotte</CardTitle>
+          <CardDescription>
+            Vue d'ensemble des {isLoadingVehicles ? "..." : vehicles?.length || 0} véhicules de votre flotte
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un véhicule..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+            </div>
+            <Button variant="outline" size="icon">
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Immatriculation</TableHead>
+                  <TableHead>Modèle</TableHead>
+                  <TableHead>Année</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Conducteur</TableHead>
+                  <TableHead>Dernière maintenance</TableHead>
+                  <TableHead>Niveau carburant</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoadingVehicles ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Loader className="h-8 w-8 mb-2 animate-spin" />
+                        <p>Chargement des véhicules...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredVehicles.length > 0 ? (
+                  filteredVehicles.map((vehicle) => (
+                    <TableRow key={vehicle.id}>
+                      <TableCell>
+                        <div className="font-medium">{vehicle.license_plate}</div>
+                      </TableCell>
+                      <TableCell>{vehicle.model}</TableCell>
+                      <TableCell>{vehicle.year}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            statusLabels[vehicle.status].color
+                          }`}
+                        >
+                          {statusLabels[vehicle.status].label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{getDriverName(vehicle.driver_id)}</TableCell>
+                      <TableCell>{formatDate(vehicle.last_maintenance)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full rounded-full bg-muted">
+                            <div
+                              className={`h-full rounded-full ${
+                                vehicle.fuel_level < 20
+                                  ? "bg-red-500"
+                                  : vehicle.fuel_level < 50
+                                  ? "bg-amber-500"
+                                  : "bg-green-500"
+                              }`}
+                              style={{ width: `${vehicle.fuel_level}%` }}
+                            />
+                          </div>
+                          <span className="text-xs">{vehicle.fuel_level}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Voir les détails</DropdownMenuItem>
+                            {canEdit && <DropdownMenuItem>Modifier</DropdownMenuItem>}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => navigate(`/maintenance?vehicle=${vehicle.id}`)}>
+                              Planifier maintenance
+                            </DropdownMenuItem>
+                            {canEdit && (
+                              <>
+                                <DropdownMenuSeparator />
+                                {vehicle.status === 'active' && (
+                                  <DropdownMenuItem 
+                                    className="text-amber-600"
+                                    onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'maintenance' })}
+                                  >
+                                    Mettre en maintenance
+                                  </DropdownMenuItem>
+                                )}
+                                {vehicle.status === 'maintenance' && (
+                                  <DropdownMenuItem 
+                                    className="text-green-600"
+                                    onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'active' })}
+                                  >
+                                    Remettre en service
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'inactive' })}
+                                >
+                                  {vehicle.status === 'inactive' ? "Déjà désactivé" : "Désactiver"}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Car className="h-8 w-8 mb-2 opacity-50" />
+                        <p>Aucun véhicule trouvé</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

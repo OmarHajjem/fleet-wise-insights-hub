@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +27,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Filter, MoreHorizontal, Building, Plus, Search, MapPin, Phone } from "lucide-react";
-import { useState } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
+import AuthCheck from "@/components/auth/AuthCheck";
 
 const garages = [
   {
@@ -78,6 +80,10 @@ const garages = [
 
 export default function Garages() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { role } = useUserRole();
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
+  const canManage = isAdmin || isManager;
 
   const filteredGarages = garages.filter(
     (garage) =>
@@ -89,138 +95,146 @@ export default function Garages() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des garages</h1>
-          <p className="text-muted-foreground">
-            Liste des garages partenaires pour la maintenance de vos véhicules
-          </p>
-        </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Ajouter un garage
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Garages partenaires</CardTitle>
-          <CardDescription>
-            {garages.length} garages partenaires disponibles dans notre réseau
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un garage..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
+    <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gestion des garages</h1>
+            <p className="text-muted-foreground">
+              Liste des garages partenaires pour la maintenance de vos véhicules
+            </p>
           </div>
+          {canManage && (
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Ajouter un garage
+            </Button>
+          )}
+        </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Adresse</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Spécialités</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Véhicules en service</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredGarages.length > 0 ? (
-                  filteredGarages.map((garage) => (
-                    <TableRow key={garage.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{garage.name}</span>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Garages partenaires</CardTitle>
+            <CardDescription>
+              {garages.length} garages partenaires disponibles dans notre réseau
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un garage..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Adresse</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Spécialités</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Véhicules en service</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredGarages.length > 0 ? (
+                    filteredGarages.map((garage) => (
+                      <TableRow key={garage.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{garage.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            {garage.address}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            {garage.phone}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {garage.specialties.map((specialty, index) => (
+                              <Badge key={index} variant="outline">
+                                {specialty}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              garage.status === "available"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-amber-100 text-amber-800"
+                            }
+                          >
+                            {garage.status === "available" ? "Disponible" : "Complet"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{garage.vehiclesInService}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem>Voir les détails</DropdownMenuItem>
+                              {canManage && <DropdownMenuItem>Modifier</DropdownMenuItem>}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>Planifier une maintenance</DropdownMenuItem>
+                              {canManage && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-red-600">
+                                    Supprimer le partenariat
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                          <Building className="h-8 w-8 mb-2 opacity-50" />
+                          <p>Aucun garage trouvé</p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          {garage.address}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          {garage.phone}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {garage.specialties.map((specialty, index) => (
-                            <Badge key={index} variant="outline">
-                              {specialty}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            garage.status === "available"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-amber-100 text-amber-800"
-                          }
-                        >
-                          {garage.status === "available" ? "Disponible" : "Complet"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{garage.vehiclesInService}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                            <DropdownMenuItem>Modifier</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>Planifier une maintenance</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                              Supprimer le partenariat
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <Building className="h-8 w-8 mb-2 opacity-50" />
-                        <p>Aucun garage trouvé</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AuthCheck>
   );
 }
