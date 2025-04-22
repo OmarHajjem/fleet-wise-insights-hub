@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Loader } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AuthCheckProps {
   children: React.ReactNode;
