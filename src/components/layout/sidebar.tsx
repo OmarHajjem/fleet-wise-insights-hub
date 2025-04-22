@@ -74,7 +74,7 @@ export function Sidebar({
           collapsed ? "p-2" : "px-6"
         )}>
           <div className="flex items-center gap-2">
-            {!collapsed && <span className="text-lg font-semibold">FleetWise</span>}
+            {!collapsed && <span className="text-lg font-semibold">Gestion de Flotte</span>}
             <div className={cn(
               "flex h-8 w-8 items-center justify-center rounded bg-sidebar-accent",
               collapsed ? "w-8" : "w-8"
@@ -151,7 +151,7 @@ export function Sidebar({
             {!collapsed && (
               <div className="flex flex-col">
                 <span className="text-sm font-medium">Admin</span>
-                <span className="text-xs text-sidebar-foreground/70">admin@fleetwise.io</span>
+                <span className="text-xs text-sidebar-foreground/70">admin@gestionflotte.fr</span>
               </div>
             )}
           </div>

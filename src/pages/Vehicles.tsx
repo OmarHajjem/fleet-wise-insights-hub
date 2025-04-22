@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Car, Plus, Search, Filter, MoreHorizontal } from "lucide-react";
+import { Car, Plus, Search, Filter, MoreHorizontal, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 const vehicles = [
   {
@@ -89,13 +100,69 @@ const statusLabels = {
 
 export default function Vehicles() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [vehiclesList, setVehiclesList] = useState(vehicles);
+  const [newVehicle, setNewVehicle] = useState({
+    licensePlate: "",
+    model: "",
+    year: new Date().getFullYear(),
+    driver: "",
+  });
+  const [dialogOpen, setDialogOpen] = useState(false);
   
-  const filteredVehicles = vehicles.filter(
+  const handleAddVehicle = () => {
+    if (!newVehicle.licensePlate || !newVehicle.model) {
+      toast({
+        title: "Information manquante",
+        description: "L'immatriculation et le modèle sont obligatoires.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const vehicle = {
+      id: vehiclesList.length + 1,
+      licensePlate: newVehicle.licensePlate,
+      model: newVehicle.model,
+      year: newVehicle.year,
+      status: "active",
+      driver: newVehicle.driver || "Non assigné",
+      lastMaintenance: new Date().toLocaleDateString("fr-FR"),
+      fuelLevel: 100,
+    };
+    
+    setVehiclesList([...vehiclesList, vehicle]);
+    setNewVehicle({
+      licensePlate: "",
+      model: "",
+      year: new Date().getFullYear(),
+      driver: "",
+    });
+    setDialogOpen(false);
+    
+    toast({
+      title: "Véhicule ajouté",
+      description: `${vehicle.model} (${vehicle.licensePlate}) a été ajouté avec succès.`,
+    });
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewVehicle({
+      ...newVehicle,
+      [name]: name === "year" ? parseInt(value) || new Date().getFullYear() : value,
+    });
+  };
+  
+  const filteredVehicles = vehiclesList.filter(
     (vehicle) =>
       vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.driver.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,17 +173,86 @@ export default function Vehicles() {
             Gérer votre flotte de véhicules et leurs informations.
           </p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Ajouter un véhicule
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Ajouter un véhicule
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
+              <DialogDescription>
+                Entrez les détails du véhicule à ajouter à la flotte
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="licensePlate" className="text-right">
+                  Immatriculation
+                </Label>
+                <Input
+                  id="licensePlate"
+                  name="licensePlate"
+                  value={newVehicle.licensePlate}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="model" className="text-right">
+                  Modèle
+                </Label>
+                <Input
+                  id="model"
+                  name="model"
+                  value={newVehicle.model}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="year" className="text-right">
+                  Année
+                </Label>
+                <Input
+                  id="year"
+                  name="year"
+                  type="number"
+                  value={newVehicle.year}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="driver" className="text-right">
+                  Conducteur
+                </Label>
+                <Input
+                  id="driver"
+                  name="driver"
+                  value={newVehicle.driver}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleAddVehicle}>Ajouter</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>Aperçu de la flotte</CardTitle>
           <CardDescription>
-            Vue d'ensemble des {vehicles.length} véhicules de votre flotte
+            Vue d'ensemble des {vehiclesList.length} véhicules de votre flotte
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -127,7 +263,7 @@ export default function Vehicles() {
                 placeholder="Rechercher un véhicule..."
                 className="pl-8"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
               />
             </div>
             <Button variant="outline" size="icon">
