@@ -1,0 +1,148 @@
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+export default function UserMenu() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Configurer l'écouteur d'événements d'authentification d'abord
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    // Ensuite vérifier la session existante
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar_url')
+        .eq('id', userId)
+        .single();
+        
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement du profil:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès."
+      });
+      navigate("/auth");
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur est survenue lors de la déconnexion.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <Button variant="outline" size="icon" disabled>
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </Button>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Button onClick={() => navigate("/auth")}>Se connecter</Button>
+    );
+  }
+
+  const initials = profile?.first_name && profile?.last_name
+    ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
+    : user.email?.substring(0, 2).toUpperCase() || "??";
+
+  const displayName = profile?.first_name && profile?.last_name
+    ? `${profile.first_name} ${profile.last_name}`
+    : user.email || "Utilisateur";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={profile?.avatar_url || ""} alt={displayName} />
+            <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate("/profile")}>
+          Profil
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/settings")}>
+          Paramètres
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-red-600 focus:text-red-600"
+          onClick={handleLogout}
+        >
+          Se déconnecter
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
