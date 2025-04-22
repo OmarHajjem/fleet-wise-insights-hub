@@ -15,11 +15,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useUserRole, UserRole } from "@/hooks/useUserRole";
+import { Badge } from "@/components/ui/badge";
 
 export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
+  const { role, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,7 +90,7 @@ export default function UserMenu() {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <Button variant="outline" size="icon" disabled>
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -109,6 +112,36 @@ export default function UserMenu() {
     ? `${profile.first_name} ${profile.last_name}`
     : user.email || "Utilisateur";
 
+  const getRoleBadgeVariant = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'manager':
+        return 'default';
+      case 'mechanic':
+        return 'secondary';
+      case 'driver':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getRoleLabel = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return 'Administrateur';
+      case 'manager':
+        return 'Gestionnaire';
+      case 'mechanic':
+        return 'Mécanicien';
+      case 'driver':
+        return 'Chauffeur';
+      default:
+        return 'Utilisateur';
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -122,7 +155,14 @@ export default function UserMenu() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium leading-none">{displayName}</p>
+              {role && (
+                <Badge variant={getRoleBadgeVariant(role)} className="ml-2">
+                  {getRoleLabel(role)}
+                </Badge>
+              )}
+            </div>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
