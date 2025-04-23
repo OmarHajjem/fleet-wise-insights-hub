@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Car, Users, Wrench, Bell, Building, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import VehiclesMap from "@/components/VehiclesMap";
 
 export default function Dashboard() {
   return (
@@ -166,6 +166,15 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Positions des véhicules</CardTitle>
+              <CardDescription>Suivi en temps réel des véhicules en service</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <VehiclesMap />
+            </CardContent>
+          </Card>
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="col-span-2">
               <CardHeader>

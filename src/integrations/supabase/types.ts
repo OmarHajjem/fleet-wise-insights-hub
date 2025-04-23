@@ -215,7 +215,10 @@ export type Database = {
           fuel_level: number | null
           id: string
           last_maintenance: string | null
+          latitude: number | null
           license_plate: string
+          location_updated_at: string | null
+          longitude: number | null
           model: string
           status: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at: string | null
@@ -227,7 +230,10 @@ export type Database = {
           fuel_level?: number | null
           id?: string
           last_maintenance?: string | null
+          latitude?: number | null
           license_plate: string
+          location_updated_at?: string | null
+          longitude?: number | null
           model: string
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
@@ -239,7 +245,10 @@ export type Database = {
           fuel_level?: number | null
           id?: string
           last_maintenance?: string | null
+          latitude?: number | null
           license_plate?: string
+          location_updated_at?: string | null
+          longitude?: number | null
           model?: string
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
