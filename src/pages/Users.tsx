@@ -102,14 +102,16 @@ export default function Users() {
           const profile = profiles?.find(p => p.id === user.id);
           const userRole = userRoles?.find(r => r.user_id === user.id);
           
-          // Fix for error #1: Ensure the role is one of the allowed types
-          let role: 'admin' | 'manager' | 'driver' | 'mechanic' = 'driver'; // Default value
+          // Define a type guard function to validate the role
+          const isValidRole = (role: string): role is 'admin' | 'manager' | 'driver' | 'mechanic' => {
+            return role === 'admin' || role === 'manager' || role === 'driver' || role === 'mechanic';
+          };
           
-          if (userRole?.role === 'admin' || 
-              userRole?.role === 'manager' || 
-              userRole?.role === 'driver' || 
-              userRole?.role === 'mechanic') {
-            role = userRole.role;
+          // Use the type guard to ensure we have a valid role
+          let userRoleValue: 'admin' | 'manager' | 'driver' | 'mechanic' = 'driver'; // Default value
+          
+          if (userRole && typeof userRole.role === 'string' && isValidRole(userRole.role)) {
+            userRoleValue = userRole.role;
           }
           
           return {
@@ -117,7 +119,7 @@ export default function Users() {
             email: user.email || '',
             firstName: profile?.first_name || '',
             lastName: profile?.last_name || '',
-            role: role,
+            role: userRoleValue,
             status: user.banned ? 'inactive' : 'active',
             assignedVehicle: null, // This would need to be fetched from vehicles table
             lastActive: user.last_sign_in_at
@@ -163,14 +165,14 @@ export default function Users() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (active) {
-        // Fix for errors #2 and #3: Use 'ban_duration' with null for unbanning
+        // Use 'ban_duration' with null for unbanning
         const { data, error } = await supabase.auth.admin.updateUserById(userId, { 
           ban_duration: null 
         });
         if (error) throw error;
         return data;
       } else {
-        // Fix for errors #2 and #3: Use 'ban_duration' with a value for banning
+        // Use 'ban_duration' with a value for banning
         const { data, error } = await supabase.auth.admin.updateUserById(userId, { 
           ban_duration: '8760h' // Ban for 1 year (365 days)
         });
