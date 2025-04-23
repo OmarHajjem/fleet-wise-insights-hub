@@ -1,14 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Plus, AlertTriangle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -16,61 +8,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Filter, MoreHorizontal, Plus, Search, Users as UsersIcon, Loader, AlertTriangle } from "lucide-react";
-import { useUserRole, UserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import AuthCheck from "@/components/auth/AuthCheck";
-
-// Types
-interface User {
-  id: string;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  role: 'admin' | 'manager' | 'driver' | 'mechanic';
-  status: 'active' | 'inactive';
-  assignedVehicle: string | null;
-  lastActive: string | null;
-}
-
-const roleLabels = {
-  driver: { label: "Conducteur", color: "bg-blue-100 text-blue-800" },
-  admin: { label: "Administrateur", color: "bg-purple-100 text-purple-800" },
-  manager: { label: "Gestionnaire", color: "bg-indigo-100 text-indigo-800" },
-  mechanic: { label: "Mécanicien", color: "bg-amber-100 text-amber-800" },
-};
-
-const statusLabels = {
-  active: { label: "Actif", color: "bg-green-100 text-green-800" },
-  inactive: { label: "Inactif", color: "bg-gray-100 text-gray-800" },
-};
+import { UserTable } from "@/components/users/UserTable";
+import { UserSearch } from "@/components/users/UserSearch";
+import { User, UserRole } from "@/types/user";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const { role, isLoading: roleLoading } = useUserRole();
+  const { role } = useUserRole();
   const queryClient = useQueryClient();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
@@ -133,7 +82,7 @@ export default function Users() {
   });
 
   const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       const { data, error } = await supabase
         .from('user_roles')
         .update({ role })
@@ -162,14 +111,12 @@ export default function Users() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (active) {
-        // Use 'ban_duration' with null for unbanning
         const { data, error } = await supabase.auth.admin.updateUserById(userId, { 
           ban_duration: null 
         });
         if (error) throw error;
         return data;
       } else {
-        // Use 'ban_duration' with a value for banning
         const { data, error } = await supabase.auth.admin.updateUserById(userId, { 
           ban_duration: '8760h' // Ban for 1 year (365 days)
         });
@@ -269,173 +216,19 @@ export default function Users() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un utilisateur..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
+          <UserSearch 
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
 
           <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Rôle</TableHead>
-                  <TableHead>Véhicule assigné</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Dernière activité</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <Loader className="h-8 w-8 mb-2 animate-spin" />
-                        <p>Chargement des utilisateurs...</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback>
-                              {user.firstName && user.lastName
-                                ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-                                : user.email.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">
-                              {user.firstName && user.lastName 
-                                ? `${user.firstName} ${user.lastName}`
-                                : "Utilisateur"}
-                            </div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`${roleLabels[user.role as keyof typeof roleLabels]?.color}`}
-                        >
-                          {roleLabels[user.role as keyof typeof roleLabels]?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{user.assignedVehicle || "-"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            statusLabels[user.status as keyof typeof statusLabels]?.color
-                          }`}
-                        >
-                          {statusLabels[user.status as keyof typeof statusLabels]?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {user.lastActive 
-                          ? new Date(user.lastActive).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                          : "Jamais"}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Voir le profil</DropdownMenuItem>
-                            <DropdownMenuItem>Modifier</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {isAdmin && (
-                              <>
-                                <DropdownMenuItem>Changer le véhicule</DropdownMenuItem>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger className="w-full text-left px-2 py-1.5 text-sm">
-                                    Changer le rôle
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent>
-                                    <DropdownMenuItem
-                                      onClick={() => updateUserRoleMutation.mutate({ userId: user.id, role: 'admin' })}
-                                      disabled={user.role === 'admin'}
-                                    >
-                                      Administrateur
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => updateUserRoleMutation.mutate({ userId: user.id, role: 'manager' })}
-                                      disabled={user.role === 'manager'}
-                                    >
-                                      Gestionnaire
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => updateUserRoleMutation.mutate({ userId: user.id, role: 'mechanic' })}
-                                      disabled={user.role === 'mechanic'}
-                                    >
-                                      Mécanicien
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => updateUserRoleMutation.mutate({ userId: user.id, role: 'driver' })}
-                                      disabled={user.role === 'driver'}
-                                    >
-                                      Conducteur
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                                <DropdownMenuSeparator />
-                              </>
-                            )}
-                            {isAdmin && (
-                              <DropdownMenuItem 
-                                className={user.status === 'active' ? "text-red-600" : "text-green-600"}
-                                onClick={() => toggleUserStatusMutation.mutate({ 
-                                  userId: user.id, 
-                                  active: user.status !== 'active' 
-                                })}
-                              >
-                                {user.status === 'active' ? "Désactiver le compte" : "Activer le compte"}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <UsersIcon className="h-8 w-8 mb-2 opacity-50" />
-                        <p>Aucun utilisateur trouvé</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            <UserTable
+              users={filteredUsers}
+              isLoading={isLoading}
+              isAdmin={isAdmin}
+              onUpdateRole={(userId, role) => updateUserRoleMutation.mutate({ userId, role: role as UserRole })}
+              onToggleStatus={(userId, active) => toggleUserStatusMutation.mutate({ userId, active })}
+            />
           </div>
         </CardContent>
       </Card>
