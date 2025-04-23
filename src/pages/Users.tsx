@@ -76,7 +76,6 @@ export default function Users() {
   const isManager = role === 'manager';
   const canManageUsers = isAdmin || isManager;
 
-  // Fetch users
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
@@ -97,21 +96,21 @@ export default function Users() {
           .select('*');
         if (rolesError) throw rolesError;
 
+        // Define a type guard function to validate the role
+        const isValidRole = (role: string): role is 'admin' | 'manager' | 'driver' | 'mechanic' => {
+          return ['admin', 'manager', 'driver', 'mechanic'].includes(role);
+        };
+        
         // Map user data
         return authUsers.users.map(user => {
           const profile = profiles?.find(p => p.id === user.id);
           const userRole = userRoles?.find(r => r.user_id === user.id);
           
-          // Define a type guard function to validate the role
-          const isValidRole = (role: string): role is 'admin' | 'manager' | 'driver' | 'mechanic' => {
-            return role === 'admin' || role === 'manager' || role === 'driver' || role === 'mechanic';
-          };
-          
-          // Use the type guard to ensure we have a valid role
-          let userRoleValue: 'admin' | 'manager' | 'driver' | 'mechanic' = 'driver'; // Default value
+          // Ensure a valid role is always assigned
+          let roleValue: 'admin' | 'manager' | 'driver' | 'mechanic' = 'driver';
           
           if (userRole && typeof userRole.role === 'string' && isValidRole(userRole.role)) {
-            userRoleValue = userRole.role;
+            roleValue = userRole.role;
           }
           
           return {
@@ -119,7 +118,7 @@ export default function Users() {
             email: user.email || '',
             firstName: profile?.first_name || '',
             lastName: profile?.last_name || '',
-            role: userRoleValue,
+            role: roleValue,
             status: user.banned ? 'inactive' : 'active',
             assignedVehicle: null, // This would need to be fetched from vehicles table
             lastActive: user.last_sign_in_at
@@ -133,7 +132,6 @@ export default function Users() {
     enabled: canManageUsers
   });
 
-  // Update user role mutation
   const updateUserRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
       const { data, error } = await supabase
@@ -161,7 +159,6 @@ export default function Users() {
     }
   });
 
-  // Toggle user status mutation
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (active) {
