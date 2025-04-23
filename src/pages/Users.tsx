@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,8 +103,7 @@ export default function Users() {
           const userRole = userRoles?.find(r => r.user_id === user.id);
           
           // Fix for error #1: Ensure the role is one of the allowed types
-          // Use type assertion with specific allowed values
-          let role: UserRole = 'driver'; // Default value
+          let role: 'admin' | 'manager' | 'driver' | 'mechanic' = 'driver'; // Default value
           
           if (userRole?.role === 'admin' || 
               userRole?.role === 'manager' || 
@@ -165,13 +163,17 @@ export default function Users() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (active) {
-        // Fix for errors #2 and #3: Use 'banned' property which is the correct property name in AdminUserAttributes
-        const { data, error } = await supabase.auth.admin.updateUserById(userId, { banned: false });
+        // Fix for errors #2 and #3: Use 'ban_duration' with null for unbanning
+        const { data, error } = await supabase.auth.admin.updateUserById(userId, { 
+          ban_duration: null 
+        });
         if (error) throw error;
         return data;
       } else {
-        // Fix for errors #2 and #3: Use 'banned' property which is the correct property name in AdminUserAttributes
-        const { data, error } = await supabase.auth.admin.updateUserById(userId, { banned: true });
+        // Fix for errors #2 and #3: Use 'ban_duration' with a value for banning
+        const { data, error } = await supabase.auth.admin.updateUserById(userId, { 
+          ban_duration: '8760h' // Ban for 1 year (365 days)
+        });
         if (error) throw error;
         return data;
       }

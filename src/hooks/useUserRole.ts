@@ -30,7 +30,14 @@ export const useUserRole = () => {
           console.error("Erreur lors de la récupération du rôle:", error);
           setRole(null);
         } else {
-          setRole(data?.role as UserRole);
+          // Ensure we get a valid role type
+          const roleValue = data?.role as string;
+          if (roleValue === 'admin' || roleValue === 'manager' || 
+              roleValue === 'driver' || roleValue === 'mechanic') {
+            setRole(roleValue);
+          } else {
+            setRole(null);
+          }
         }
       } catch (error) {
         console.error("Erreur:", error);
