@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { UserRole } from "@/types/user";
+import type { UserRole } from "@/types/user";
 
-export { UserRole };
+// Re-export the UserRole type properly using 'export type'
+export type { UserRole };
 
 export const useUserRole = () => {
   const [role, setRole] = useState<UserRole | null>(null);
