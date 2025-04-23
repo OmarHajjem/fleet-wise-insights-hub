@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,8 +103,16 @@ export default function Users() {
           const profile = profiles?.find(p => p.id === user.id);
           const userRole = userRoles?.find(r => r.user_id === user.id);
           
-          // Fix for error #1: Ensure the role is one of the allowed types or default to 'driver'
-          const role: UserRole = (userRole?.role as UserRole) || 'driver';
+          // Fix for error #1: Ensure the role is one of the allowed types
+          // Use type assertion with specific allowed values
+          let role: UserRole = 'driver'; // Default value
+          
+          if (userRole?.role === 'admin' || 
+              userRole?.role === 'manager' || 
+              userRole?.role === 'driver' || 
+              userRole?.role === 'mechanic') {
+            role = userRole.role;
+          }
           
           return {
             id: user.id,
@@ -156,13 +165,13 @@ export default function Users() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (active) {
-        // Unban user - Fix for errors #2 and #3: Use 'ban' property instead of 'banned'
-        const { data, error } = await supabase.auth.admin.updateUserById(userId, { ban: false });
+        // Fix for errors #2 and #3: Use 'banned' property which is the correct property name in AdminUserAttributes
+        const { data, error } = await supabase.auth.admin.updateUserById(userId, { banned: false });
         if (error) throw error;
         return data;
       } else {
-        // Ban user - Fix for errors #2 and #3: Use 'ban' property instead of 'banned'
-        const { data, error } = await supabase.auth.admin.updateUserById(userId, { ban: true });
+        // Fix for errors #2 and #3: Use 'banned' property which is the correct property name in AdminUserAttributes
+        const { data, error } = await supabase.auth.admin.updateUserById(userId, { banned: true });
         if (error) throw error;
         return data;
       }
