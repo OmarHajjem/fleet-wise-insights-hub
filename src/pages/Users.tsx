@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertTriangle } from "lucide-react";
@@ -15,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import AuthCheck from "@/components/auth/AuthCheck";
 import { UserTable } from "@/components/users/UserTable";
 import { UserSearch } from "@/components/users/UserSearch";
-import { User, UserRole } from "@/types/user";
+import { User, UserRole, UserStatus } from "@/types/user";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,8 +47,13 @@ export default function Users() {
         if (rolesError) throw rolesError;
 
         // Define a type guard function to validate the role
-        const isValidRole = (role: string): role is 'admin' | 'manager' | 'driver' | 'mechanic' => {
+        const isValidRole = (role: string): role is UserRole => {
           return ['admin', 'manager', 'driver', 'mechanic'].includes(role);
+        };
+        
+        // Define a type guard function to validate the status
+        const isValidStatus = (status: string): status is UserStatus => {
+          return ['active', 'inactive'].includes(status);
         };
         
         // Map user data
@@ -56,11 +62,14 @@ export default function Users() {
           const userRole = userRoles?.find(r => r.user_id === user.id);
           
           // Ensure a valid role is always assigned
-          let roleValue: 'admin' | 'manager' | 'driver' | 'mechanic' = 'driver';
+          let roleValue: UserRole = 'driver';
           
           if (userRole && typeof userRole.role === 'string' && isValidRole(userRole.role)) {
             roleValue = userRole.role;
           }
+          
+          // Ensure a valid status is always assigned
+          let statusValue: UserStatus = user.banned ? 'inactive' : 'active';
           
           return {
             id: user.id,
@@ -68,7 +77,7 @@ export default function Users() {
             firstName: profile?.first_name || '',
             lastName: profile?.last_name || '',
             role: roleValue,
-            status: user.banned ? 'inactive' : 'active',
+            status: statusValue,
             assignedVehicle: null, // This would need to be fetched from vehicles table
             lastActive: user.last_sign_in_at
           };

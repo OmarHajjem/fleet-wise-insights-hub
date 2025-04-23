@@ -2,11 +2,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-
-export type UserRole = 'admin' | 'manager' | 'driver' | 'mechanic' | null;
+import { UserRole } from "@/types/user";
 
 export const useUserRole = () => {
-  const [role, setRole] = useState<UserRole>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -32,8 +31,11 @@ export const useUserRole = () => {
         } else {
           // Ensure we get a valid role type
           const roleValue = data?.role as string;
-          if (roleValue === 'admin' || roleValue === 'manager' || 
-              roleValue === 'driver' || roleValue === 'mechanic') {
+          const isValidRole = (role: string): role is UserRole => {
+            return ['admin', 'manager', 'driver', 'mechanic'].includes(role);
+          };
+          
+          if (roleValue && isValidRole(roleValue)) {
             setRole(roleValue);
           } else {
             setRole(null);

@@ -31,10 +31,15 @@ const App = () => (
     <Sonner />
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<Auth />} />
         
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={
+            <AuthCheck>
+              <Dashboard />
+            </AuthCheck>
+          } />
           <Route path="/vehicles" element={
             <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
               <Vehicles />

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader, Lock, Mail, User } from "lucide-react";
-import { useEffect } from "react";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +30,7 @@ export default function Auth() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        navigate("/dashboard");
       }
     };
 
@@ -57,7 +56,7 @@ export default function Auth() {
           title: "Connexion réussie",
           description: "Bienvenue sur votre tableau de bord."
         });
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (error: any) {
       let errorMessage = "Une erreur est survenue lors de la connexion.";
@@ -157,23 +156,23 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 p-4">
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-slate-100 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">FleetManager</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold tracking-tight text-primary">FleetManager</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Gestion simplifiée de votre flotte automobile
           </p>
         </div>
         
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Connexion</TabsTrigger>
             <TabsTrigger value="signup">Inscription</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
-            <Card>
+            <Card className="border-2">
               <form onSubmit={handleLogin}>
                 <CardHeader>
                   <CardTitle>Connexion</CardTitle>
@@ -234,7 +233,7 @@ export default function Auth() {
           </TabsContent>
           
           <TabsContent value="signup">
-            <Card>
+            <Card className="border-2">
               <form onSubmit={handleSignup}>
                 <CardHeader>
                   <CardTitle>Créer un compte</CardTitle>
