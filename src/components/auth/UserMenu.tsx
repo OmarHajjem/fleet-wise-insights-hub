@@ -15,7 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useUserRole, UserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/hooks/useUserRole";
+import { UserRole } from "@/types/user";
 import { Badge } from "@/components/ui/badge";
 
 export default function UserMenu() {
