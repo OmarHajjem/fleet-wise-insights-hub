@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Filter, MoreHorizontal, Plus, Search, Users as UsersIcon, Loader, AlertTriangle } from "lucide-react";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole, UserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -103,12 +102,15 @@ export default function Users() {
           const profile = profiles?.find(p => p.id === user.id);
           const userRole = userRoles?.find(r => r.user_id === user.id);
           
+          // Fix for error #1: Ensure the role is one of the allowed types or default to 'driver'
+          const role: UserRole = (userRole?.role as UserRole) || 'driver';
+          
           return {
             id: user.id,
             email: user.email || '',
             firstName: profile?.first_name || '',
             lastName: profile?.last_name || '',
-            role: userRole?.role || 'driver',
+            role: role,
             status: user.banned ? 'inactive' : 'active',
             assignedVehicle: null, // This would need to be fetched from vehicles table
             lastActive: user.last_sign_in_at
@@ -154,13 +156,13 @@ export default function Users() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (active) {
-        // Unban user
-        const { data, error } = await supabase.auth.admin.updateUserById(userId, { banned: false });
+        // Unban user - Fix for errors #2 and #3: Use 'ban' property instead of 'banned'
+        const { data, error } = await supabase.auth.admin.updateUserById(userId, { ban: false });
         if (error) throw error;
         return data;
       } else {
-        // Ban user
-        const { data, error } = await supabase.auth.admin.updateUserById(userId, { banned: true });
+        // Ban user - Fix for errors #2 and #3: Use 'ban' property instead of 'banned'
+        const { data, error } = await supabase.auth.admin.updateUserById(userId, { ban: true });
         if (error) throw error;
         return data;
       }
