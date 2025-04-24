@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,32 +37,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
-
-// Types
-interface Vehicle {
-  id: string;
-  license_plate: string;
-  model: string;
-  year: number;
-  status: "active" | "maintenance" | "inactive";
-  driver_id: string | null;
-  fuel_level: number;
-  last_maintenance: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Driver {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-}
+import { staticVehicles, staticUsers, vehicleService } from "@/utils/staticData";
 
 const statusLabels = {
   active: { label: "En service", color: "bg-green-100 text-green-800" },
@@ -79,53 +58,37 @@ export default function Vehicles() {
     driver_id: "",
   });
   const [dialogOpen, setDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const navigate = useNavigate();
   const { role, isLoading: roleLoading } = useUserRole();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const canEdit = isAdmin || isManager;
   
-  // Fetch vehicles data
-  const { data: vehicles, isLoading: isLoadingVehicles, error: vehiclesError } = useQuery({
-    queryKey: ['vehicles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data as Vehicle[];
+  const handleAddVehicle = async () => {
+    if (!newVehicle.license_plate || !newVehicle.model) {
+      toast({
+        title: "Information manquante",
+        description: "L'immatriculation et le modèle sont obligatoires.",
+        variant: "destructive",
+      });
+      return;
     }
-  });
-
-  // Fetch drivers data
-  const { data: drivers, isLoading: isLoadingDrivers } = useQuery({
-    queryKey: ['drivers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name');
-        
-      if (error) throw error;
-      return data as Driver[];
-    }
-  });
-
-  // Add vehicle mutation
-  const addVehicleMutation = useMutation({
-    mutationFn: async (newVehicleData: Omit<Vehicle, 'id' | 'created_at' | 'updated_at' | 'last_maintenance'>) => {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .insert([newVehicleData])
-        .select();
-        
-      if (error) throw error;
-      return data[0];
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    
+    setIsPending(true);
+    try {
+      const vehicleData = {
+        license_plate: newVehicle.license_plate,
+        model: newVehicle.model,
+        year: newVehicle.year,
+        status: 'active' as const,
+        driver_id: newVehicle.driver_id || null,
+        fuel_level: 100,
+      };
+      
+      await vehicleService.addVehicle(vehicleData);
+      
       setNewVehicle({
         license_plate: "",
         model: "",
@@ -138,37 +101,26 @@ export default function Vehicles() {
         title: "Véhicule ajouté",
         description: `Le véhicule a été ajouté avec succès.`,
       });
-    },
-    onError: (error) => {
+    } catch (error: any) {
       console.error("Erreur lors de l'ajout du véhicule:", error);
       toast({
         title: "Erreur",
         description: `Impossible d'ajouter le véhicule. ${error.message}`,
         variant: "destructive",
       });
+    } finally {
+      setIsPending(false);
     }
-  });
+  };
   
-  // Update vehicle status mutation
-  const updateVehicleStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "active" | "maintenance" | "inactive" }) => {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .update({ status })
-        .eq('id', id)
-        .select();
-        
-      if (error) throw error;
-      return data[0];
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+  const handleUpdateVehicleStatus = async (id: string, status: "active" | "maintenance" | "inactive") => {
+    try {
+      await vehicleService.updateVehicleStatus(id, status);
       toast({
         title: "Statut mis à jour",
         description: "Le statut du véhicule a été mis à jour avec succès.",
       });
-    },
-    onError: (error) => {
+    } catch (error: any) {
       console.error("Erreur lors de la mise à jour du statut:", error);
       toast({
         title: "Erreur",
@@ -176,28 +128,6 @@ export default function Vehicles() {
         variant: "destructive",
       });
     }
-  });
-  
-  const handleAddVehicle = () => {
-    if (!newVehicle.license_plate || !newVehicle.model) {
-      toast({
-        title: "Information manquante",
-        description: "L'immatriculation et le modèle sont obligatoires.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const vehicleData = {
-      license_plate: newVehicle.license_plate,
-      model: newVehicle.model,
-      year: newVehicle.year,
-      status: 'active' as const,
-      driver_id: newVehicle.driver_id || null,
-      fuel_level: 100,
-    };
-    
-    addVehicleMutation.mutate(vehicleData);
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -209,9 +139,9 @@ export default function Vehicles() {
   };
 
   const getDriverName = (driverId: string | null) => {
-    if (!driverId || !drivers) return "Non assigné";
-    const driver = drivers.find(d => d.id === driverId);
-    return driver ? `${driver.first_name || ''} ${driver.last_name || ''}`.trim() : "Non assigné";
+    if (!driverId) return "Non assigné";
+    const driver = staticUsers.find(d => d.id === driverId);
+    return driver ? `${driver.firstName || ''} ${driver.lastName || ''}`.trim() : "Non assigné";
   };
   
   const formatDate = (dateString: string | null) => {
@@ -223,19 +153,19 @@ export default function Vehicles() {
     }
   };
   
-  const filteredVehicles = vehicles?.filter(
+  const filteredVehicles = staticVehicles.filter(
     (vehicle) =>
       vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getDriverName(vehicle.driver_id).toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
   
   // Gestion des erreurs
-  if (vehiclesError) {
+  if (false) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -255,7 +185,7 @@ export default function Vehicles() {
             <p className="text-muted-foreground mb-6">
               Une erreur s'est produite lors du chargement des véhicules. Veuillez réessayer.
             </p>
-            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['vehicles'] })}>
+            <Button onClick={() => {}}>
               Réessayer
             </Button>
           </CardContent>
@@ -340,9 +270,9 @@ export default function Vehicles() {
                     className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="">Non assigné</option>
-                    {drivers?.map((driver) => (
+                    {staticUsers?.map((driver) => (
                       <option key={driver.id} value={driver.id}>
-                        {`${driver.first_name || ''} ${driver.last_name || ''}`.trim() || "Utilisateur " + driver.id.substring(0, 8)}
+                        {`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || "Utilisateur " + driver.id.substring(0, 8)}
                       </option>
                     ))}
                   </select>
@@ -352,8 +282,8 @@ export default function Vehicles() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Annuler
                 </Button>
-                <Button onClick={handleAddVehicle} disabled={addVehicleMutation.isPending}>
-                  {addVehicleMutation.isPending ? (
+                <Button onClick={handleAddVehicle} disabled={isPending}>
+                  {isPending ? (
                     <>
                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                       Ajout...
@@ -372,7 +302,7 @@ export default function Vehicles() {
         <CardHeader className="pb-3">
           <CardTitle>Aperçu de la flotte</CardTitle>
           <CardDescription>
-            Vue d'ensemble des {isLoadingVehicles ? "..." : vehicles?.length || 0} véhicules de votre flotte
+            Vue d'ensemble des {isLoading ? "..." : staticVehicles?.length || 0} véhicules de votre flotte
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -406,7 +336,7 @@ export default function Vehicles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoadingVehicles ? (
+                {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -474,7 +404,7 @@ export default function Vehicles() {
                                 {vehicle.status === 'active' && (
                                   <DropdownMenuItem 
                                     className="text-amber-600"
-                                    onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'maintenance' })}
+                                    onClick={() => handleUpdateVehicleStatus(vehicle.id, 'maintenance')}
                                   >
                                     Mettre en maintenance
                                   </DropdownMenuItem>
@@ -482,14 +412,14 @@ export default function Vehicles() {
                                 {vehicle.status === 'maintenance' && (
                                   <DropdownMenuItem 
                                     className="text-green-600"
-                                    onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'active' })}
+                                    onClick={() => handleUpdateVehicleStatus(vehicle.id, 'active')}
                                   >
                                     Remettre en service
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem 
                                   className="text-red-600"
-                                  onClick={() => updateVehicleStatusMutation.mutate({ id: vehicle.id, status: 'inactive' })}
+                                  onClick={() => handleUpdateVehicleStatus(vehicle.id, 'inactive')}
                                 >
                                   {vehicle.status === 'inactive' ? "Déjà désactivé" : "Désactiver"}
                                 </DropdownMenuItem>

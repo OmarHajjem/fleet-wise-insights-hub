@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader, Lock, Mail, User } from "lucide-react";
+import { authService, staticUsers } from "@/utils/staticData";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,8 +27,8 @@ export default function Auth() {
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      const { user } = await authService.getUser();
+      if (user) {
         navigate("/dashboard");
       }
     };
@@ -42,33 +41,18 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword
+      await authService.signIn(loginEmail, loginPassword);
+      
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue sur votre tableau de bord."
       });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.session) {
-        toast({
-          title: "Connexion réussie",
-          description: "Bienvenue sur votre tableau de bord."
-        });
-        navigate("/dashboard");
-      }
+      navigate("/dashboard");
     } catch (error: any) {
       let errorMessage = "Une erreur est survenue lors de la connexion.";
       
       if (error.message) {
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Identifiants invalides. Veuillez vérifier votre email et mot de passe.";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Veuillez confirmer votre email avant de vous connecter.";
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
       
       toast({
@@ -107,42 +91,30 @@ export default function Auth() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: signupPassword,
-        options: {
-          data: {
-            first_name: signupFirstName,
-            last_name: signupLastName
-          }
-        }
+      // Simuler une inscription
+      const emailExists = staticUsers.some(user => user.email === signupEmail);
+      if (emailExists) {
+        throw new Error("Cette adresse email est déjà utilisée.");
+      }
+      
+      // Dans une vraie app, nous ajouterions l'utilisateur à la base de données ici
+      
+      toast({
+        title: "Inscription réussie !",
+        description: "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
       });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        toast({
-          title: "Inscription réussie !",
-          description: "Votre compte a été créé avec succès. Consultez votre email pour activer votre compte."
-        });
-        setActiveTab("login");
-        // Réinitialiser les champs
-        setSignupEmail("");
-        setSignupPassword("");
-        setSignupFirstName("");
-        setSignupLastName("");
-      }
+      
+      setActiveTab("login");
+      // Réinitialiser les champs
+      setSignupEmail("");
+      setSignupPassword("");
+      setSignupFirstName("");
+      setSignupLastName("");
     } catch (error: any) {
       let errorMessage = "Une erreur est survenue lors de l'inscription.";
       
       if (error.message) {
-        if (error.message.includes("User already registered")) {
-          errorMessage = "Cette adresse email est déjà utilisée.";
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
       
       toast({

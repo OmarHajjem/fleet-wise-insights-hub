@@ -11,71 +11,69 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import type { UserRole } from "@/types/user";
+import type { UserRole } from "@/utils/staticData";
+import { authService } from "@/utils/staticData";
 import { Badge } from "@/components/ui/badge";
 
 export default function UserMenu() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
   const { role, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Configurer l'écouteur d'événements d'authentification d'abord
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
+    const fetchUser = async () => {
+      try {
+        const { user } = await authService.getUser();
+        setUser(user);
         
-        if (session?.user) {
-          fetchProfile(session.user.id);
+        if (user) {
+          setProfile({
+            first_name: user.firstName,
+            last_name: user.lastName,
+            avatar_url: user.avatar_url
+          });
         } else {
           setProfile(null);
-          setLoading(false);
         }
-      }
-    );
-
-    // Ensuite vérifier la session existante
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'utilisateur:', error);
         setProfile(null);
+      } finally {
         setLoading(false);
       }
+    };
+    
+    fetchUser();
+    
+    // Set up auth state change listener
+    const subscription = authService.onAuthStateChange((updatedUser) => {
+      setUser(updatedUser);
+      if (updatedUser) {
+        setProfile({
+          first_name: updatedUser.firstName,
+          last_name: updatedUser.lastName,
+          avatar_url: updatedUser.avatar_url
+        });
+      } else {
+        setProfile(null);
+      }
     });
-
-    return () => subscription.unsubscribe();
+    
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, avatar_url')
-        .eq('id', userId)
-        .single();
-        
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement du profil:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await authService.signOut();
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès."

@@ -2,46 +2,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { staticVehicles } from '@/utils/staticData';
 
 // Mapbox requires a public access token
 mapboxgl.accessToken = 'pk.eyJ1IjoiZmxlZXR3aXNlIiwiYSI6ImNsd3NmZHo5YzBjcmQya3BxcDR2MXJhbXQifQ.QZo7OA4zYr8LMsG9y5w0Zg';
-
-type Vehicle = {
-  id: string;
-  model: string;
-  license_plate: string;
-  latitude: number;
-  longitude: number;
-  status: string;
-};
-
-// Static data for demonstration
-const staticVehicles: Vehicle[] = [
-  {
-    id: '1',
-    model: 'Renault Kangoo',
-    license_plate: 'AA-123-BB',
-    latitude: 48.8566,
-    longitude: 2.3522,
-    status: 'active'
-  },
-  {
-    id: '2',
-    model: 'Peugeot Partner',
-    license_plate: 'BB-456-CC',
-    latitude: 48.8756,
-    longitude: 2.3522,
-    status: 'active'
-  },
-  {
-    id: '3',
-    model: 'Citroën Berlingo',
-    license_plate: 'CC-789-DD',
-    latitude: 48.8656,
-    longitude: 2.3722,
-    status: 'active'
-  }
-];
 
 const VehiclesMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -76,6 +40,8 @@ const VehiclesMap: React.FC = () => {
     markers.current = {};
 
     staticVehicles.forEach(vehicle => {
+      if (!vehicle.latitude || !vehicle.longitude) return;
+      
       const markerElement = document.createElement('div');
       markerElement.className = 'vehicle-marker';
       markerElement.style.width = '30px';

@@ -1,8 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
+import { authService } from "@/utils/staticData";
 import { Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,72 +11,40 @@ interface AuthCheckProps {
 }
 
 const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Configurer l'écouteur d'événements d'authentification d'abord
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
+    const checkAuth = async () => {
+      try {
+        // Check if user is logged in
+        const { user } = await authService.getUser();
+        setUser(user);
         
-        if (session) {
-          checkAccess(session.user.id);
+        if (user) {
+          // If no specific roles are required, any authenticated user has access
+          if (!requiredRoles || requiredRoles.length === 0) {
+            setHasAccess(true);
+          } else {
+            // Check if user has the required role
+            const userRole = user.role;
+            setHasAccess(requiredRoles.includes(userRole));
+          }
         } else {
-          setLoading(false);
           setHasAccess(false);
         }
-      }
-    );
-
-    // Ensuite vérifier la session existante
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      
-      if (session) {
-        checkAccess(session.user.id);
-      } else {
+      } catch (error) {
+        console.error("Erreur lors de la vérification des droits:", error);
+        setHasAccess(false);
+      } finally {
         setLoading(false);
-        setHasAccess(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, [requiredRoles]);
-
-  const checkAccess = async (userId: string) => {
-    // Si aucun rôle n'est requis, l'accès est accordé simplement avec une session valide
-    if (!requiredRoles || requiredRoles.length === 0) {
-      setHasAccess(true);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Récupération du rôle de l'utilisateur
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        console.error("Erreur lors de la vérification du rôle:", error);
-        setHasAccess(false);
-      } else if (data && requiredRoles.includes(data.role)) {
-        setHasAccess(true);
-      } else {
-        setHasAccess(false);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la vérification des droits:", error);
-      setHasAccess(false);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -90,7 +57,7 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
     );
   }
 
-  if (!session) {
+  if (!user) {
     // Rediriger vers la page de connexion
     navigate("/auth");
     return null;
