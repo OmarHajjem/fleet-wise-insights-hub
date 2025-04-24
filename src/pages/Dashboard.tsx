@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Users, Wrench, Bell, Building } from "lucide-react";
+import { Car, Users, Wrench, Bell, Building, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import VehiclesMap from "@/components/VehiclesMap";
 
