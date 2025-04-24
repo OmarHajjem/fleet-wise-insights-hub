@@ -2,8 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { supabase } from "@/integrations/supabase/client";
-import { CarIcon } from 'lucide-react';
 
 // Mapbox requires a public access token
 mapboxgl.accessToken = 'pk.eyJ1IjoiZmxlZXR3aXNlIiwiYSI6ImNsd3NmZHo5YzBjcmQya3BxcDR2MXJhbXQifQ.QZo7OA4zYr8LMsG9y5w0Zg';
@@ -17,10 +15,37 @@ type Vehicle = {
   status: string;
 };
 
+// Static data for demonstration
+const staticVehicles: Vehicle[] = [
+  {
+    id: '1',
+    model: 'Renault Kangoo',
+    license_plate: 'AA-123-BB',
+    latitude: 48.8566,
+    longitude: 2.3522,
+    status: 'active'
+  },
+  {
+    id: '2',
+    model: 'Peugeot Partner',
+    license_plate: 'BB-456-CC',
+    latitude: 48.8756,
+    longitude: 2.3522,
+    status: 'active'
+  },
+  {
+    id: '3',
+    model: 'Citroën Berlingo',
+    license_plate: 'CC-789-DD',
+    latitude: 48.8656,
+    longitude: 2.3722,
+    status: 'active'
+  }
+];
+
 const VehiclesMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
 
   useEffect(() => {
@@ -31,7 +56,7 @@ const VehiclesMap: React.FC = () => {
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [2.3522, 48.8566], // Paris coordinates
-      zoom: 6
+      zoom: 12
     });
 
     // Add navigation controls
@@ -42,30 +67,6 @@ const VehiclesMap: React.FC = () => {
     };
   }, []);
 
-  // Fetch active vehicles with location
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('id, model, license_plate, latitude, longitude, status')
-        .eq('status', 'active')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
-
-      if (error) {
-        console.error('Error fetching vehicles:', error);
-        return;
-      }
-
-      setVehicles(data as Vehicle[]);
-    };
-
-    fetchVehicles();
-    const interval = setInterval(fetchVehicles, 60000); // Refresh every minute
-
-    return () => clearInterval(interval);
-  }, []);
-
   // Update map markers when vehicles change
   useEffect(() => {
     if (!map.current) return;
@@ -74,7 +75,7 @@ const VehiclesMap: React.FC = () => {
     Object.values(markers.current).forEach(marker => marker.remove());
     markers.current = {};
 
-    vehicles.forEach(vehicle => {
+    staticVehicles.forEach(vehicle => {
       const markerElement = document.createElement('div');
       markerElement.className = 'vehicle-marker';
       markerElement.style.width = '30px';
@@ -100,7 +101,7 @@ const VehiclesMap: React.FC = () => {
 
       markers.current[vehicle.id] = marker;
     });
-  }, [vehicles]);
+  }, []);
 
   return (
     <div className="w-full h-[400px] rounded-lg overflow-hidden">
