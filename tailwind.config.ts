@@ -80,6 +80,16 @@ export default {
 					800: '#166534',
 					900: '#14532d',
 					950: '#052e16',
+				},
+				// Couleurs pour la barre latérale
+				sidebar: {
+					DEFAULT: '#1c2434',
+					foreground: '#e2e8f0',
+					border: '#334155',
+					accent: '#334155',
+					'accent-foreground': '#e2e8f0',
+					primary: '#2563eb',
+					'primary-foreground': '#ffffff'
 				}
 			},
 			borderRadius: {

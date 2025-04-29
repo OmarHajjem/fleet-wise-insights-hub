@@ -1,256 +1,187 @@
 
-// Static data store to replace Supabase backend
+// Types de rôles utilisateur
+export type UserRole = 'admin' | 'manager' | 'mechanic' | 'driver';
 
-// User types
-export type UserRole = 'admin' | 'manager' | 'driver' | 'mechanic';
-export type UserStatus = 'active' | 'inactive';
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  status: UserStatus;
-  assignedVehicle: string | null;
-  lastActive: string | null;
-  avatar_url?: string | null;
-  phone?: string | null;
+// Service de gestion des rôles (simulation)
+class RoleService {
+  getUserRole(): UserRole {
+    // Simuler la récupération du rôle depuis une API
+    // En production, cela viendrait d'une API ou d'un stockage sécurisé
+    const roles: UserRole[] = ['admin', 'manager', 'mechanic', 'driver'];
+    const randomIndex = Math.floor(Math.random() * roles.length);
+    return roles[randomIndex];
+  }
 }
 
-export interface Vehicle {
-  id: string;
-  license_plate: string;
-  model: string;
-  year: number;
-  status: 'active' | 'maintenance' | 'inactive';
-  driver_id: string | null;
-  fuel_level: number;
-  last_maintenance: string | null;
-  created_at: string;
-  updated_at: string;
-  latitude?: number;
-  longitude?: number;
-}
+export const roleService = new RoleService();
 
-// Current user state
-let currentUser: User | null = {
-  id: "1",
-  email: "admin@fleetwise.com",
-  firstName: "Admin",
-  lastName: "User",
-  role: "admin",
-  status: "active",
-  assignedVehicle: null,
-  lastActive: new Date().toISOString(),
-  phone: "+33123456789"
-};
-
-// Mock data
-export const staticUsers: User[] = [
-  {
-    id: "1",
-    email: "admin@fleetwise.com",
-    firstName: "Admin",
-    lastName: "User",
-    role: "admin",
-    status: "active",
-    assignedVehicle: null,
-    lastActive: new Date().toISOString()
+// Données de véhicules (simulation)
+export const vehiclesData = [
+  { 
+    id: 'v1', 
+    name: 'Renault Kangoo E-Tech', 
+    type: 'Utilitaire Électrique',
+    status: 'active',
+    location: { lat: 48.8566, lng: 2.3522 },
+    driver: 'Jean Dupont',
+    lastMaintenance: '2025-03-15',
+    nextMaintenance: '2025-06-15',
+    emissions: 0,
+    efficiency: 92
   },
-  {
-    id: "2",
-    email: "manager@fleetwise.com",
-    firstName: "Manager",
-    lastName: "User",
-    role: "manager",
-    status: "active",
-    assignedVehicle: null,
-    lastActive: new Date().toISOString()
+  { 
+    id: 'v2', 
+    name: 'Peugeot e-Partner', 
+    type: 'Utilitaire Électrique',
+    status: 'maintenance',
+    location: { lat: 48.8606, lng: 2.3376 },
+    driver: 'Marie Laurent',
+    lastMaintenance: '2025-01-10',
+    nextMaintenance: '2025-04-10',
+    emissions: 0,
+    efficiency: 88
   },
-  {
-    id: "3",
-    email: "driver@fleetwise.com",
-    firstName: "Driver",
-    lastName: "User",
-    role: "driver",
-    status: "active",
-    assignedVehicle: "1",
-    lastActive: new Date().toISOString()
+  { 
+    id: 'v3', 
+    name: 'Citroën Berlingo', 
+    type: 'Utilitaire Diesel',
+    status: 'active',
+    location: { lat: 48.8496, lng: 2.3395 },
+    driver: 'Thomas Martin',
+    lastMaintenance: '2025-02-22',
+    nextMaintenance: '2025-05-22',
+    emissions: 145,
+    efficiency: 65
   },
-  {
-    id: "4",
-    email: "mechanic@fleetwise.com",
-    firstName: "Mechanic",
-    lastName: "User",
-    role: "mechanic",
-    status: "active",
-    assignedVehicle: null,
-    lastActive: new Date().toISOString()
+  { 
+    id: 'v4', 
+    name: 'Fiat Ducato', 
+    type: 'Fourgon Diesel',
+    status: 'inactive',
+    location: { lat: 48.8737, lng: 2.2950 },
+    driver: 'Non assigné',
+    lastMaintenance: '2025-03-05',
+    nextMaintenance: '2025-06-05',
+    emissions: 195,
+    efficiency: 58
+  },
+  { 
+    id: 'v5', 
+    name: 'Tesla Model 3', 
+    type: 'Berline Électrique',
+    status: 'active',
+    location: { lat: 48.8417, lng: 2.3275 },
+    driver: 'Sophie Bernard',
+    lastMaintenance: '2025-04-01',
+    nextMaintenance: '2025-07-01',
+    emissions: 0,
+    efficiency: 95
   }
 ];
 
-export const staticVehicles: Vehicle[] = [
+// Données des garages (simulation)
+export const garagesData = [
   {
-    id: "1",
-    license_plate: "AA-123-BB",
-    model: "Renault Kangoo",
-    year: 2021,
-    status: "active",
-    driver_id: "3",
-    fuel_level: 75,
-    last_maintenance: "2023-12-01T10:00:00Z",
-    created_at: "2023-01-15T14:30:00Z",
-    updated_at: "2023-12-01T10:00:00Z",
-    latitude: 48.8566,
-    longitude: 2.3522
+    id: 'g1',
+    name: 'Garage Central',
+    address: '15 Rue de Rivoli, Paris',
+    capacity: 25,
+    occupied: 18,
+    specialties: ['Électrique', 'Hybride', 'Diesel'],
+    contact: '+33 1 23 45 67 89'
   },
   {
-    id: "2",
-    license_plate: "BB-456-CC",
-    model: "Peugeot Partner",
-    year: 2020,
-    status: "maintenance",
-    driver_id: null,
-    fuel_level: 30,
-    last_maintenance: "2023-11-15T14:30:00Z",
-    created_at: "2023-02-10T09:15:00Z",
-    updated_at: "2023-11-15T14:30:00Z",
-    latitude: 48.8756,
-    longitude: 2.3522
+    id: 'g2',
+    name: 'Atelier Nord',
+    address: '42 Avenue de Flandre, Paris',
+    capacity: 15,
+    occupied: 12,
+    specialties: ['Diesel', 'Essence'],
+    contact: '+33 1 98 76 54 32'
   },
   {
-    id: "3",
-    license_plate: "CC-789-DD",
-    model: "Citroën Berlingo",
-    year: 2022,
-    status: "active",
-    driver_id: null,
-    fuel_level: 90,
-    last_maintenance: "2023-12-10T11:45:00Z",
-    created_at: "2023-03-05T16:20:00Z",
-    updated_at: "2023-12-10T11:45:00Z",
-    latitude: 48.8656,
-    longitude: 2.3722
+    id: 'g3',
+    name: 'Tech Auto Sud',
+    address: '8 Boulevard Saint-Michel, Paris',
+    capacity: 30,
+    occupied: 22,
+    specialties: ['Électrique', 'Hydrogène', 'Hybride'],
+    contact: '+33 1 45 67 89 01'
   }
 ];
 
-// Auth functions
-export const authService = {
-  getSession: () => {
-    return Promise.resolve({ user: currentUser ? { id: currentUser.id } : null });
+// Données des utilisateurs (simulation)
+export const usersData = [
+  {
+    id: 'u1',
+    name: 'Alexandre Dubois',
+    email: 'a.dubois@fleetwise.fr',
+    role: 'admin',
+    vehicleId: null,
+    joinDate: '2023-05-12',
+    status: 'active'
   },
-  getUser: () => {
-    return Promise.resolve({ user: currentUser });
+  {
+    id: 'u2',
+    name: 'Émilie Laurent',
+    email: 'e.laurent@fleetwise.fr',
+    role: 'manager',
+    vehicleId: null,
+    joinDate: '2023-07-22',
+    status: 'active'
   },
-  signIn: (email: string, password: string) => {
-    const user = staticUsers.find(u => u.email === email);
-    if (user && password === "password") {
-      currentUser = user;
-      return Promise.resolve({ user });
-    }
-    return Promise.reject(new Error("Invalid login credentials"));
+  {
+    id: 'u3',
+    name: 'Jean Dupont',
+    email: 'j.dupont@fleetwise.fr',
+    role: 'driver',
+    vehicleId: 'v1',
+    joinDate: '2023-09-05',
+    status: 'active'
   },
-  signOut: () => {
-    currentUser = null;
-    return Promise.resolve();
+  {
+    id: 'u4',
+    name: 'Marie Laurent',
+    email: 'm.laurent@fleetwise.fr',
+    role: 'driver',
+    vehicleId: 'v2',
+    joinDate: '2023-08-15',
+    status: 'active'
   },
-  onAuthStateChange: (callback: (user: User | null) => void) => {
-    // In a real app, this would set up a listener
-    callback(currentUser);
-    // Return a fake subscription with unsubscribe method
-    return {
-      unsubscribe: () => {}
-    };
+  {
+    id: 'u5',
+    name: 'Thomas Martin',
+    email: 't.martin@fleetwise.fr',
+    role: 'driver',
+    vehicleId: 'v3',
+    joinDate: '2023-10-20',
+    status: 'active'
+  },
+  {
+    id: 'u6',
+    name: 'Sophie Bernard',
+    email: 's.bernard@fleetwise.fr',
+    role: 'driver',
+    vehicleId: 'v5',
+    joinDate: '2024-01-10',
+    status: 'active'
+  },
+  {
+    id: 'u7',
+    name: 'Pierre Leroy',
+    email: 'p.leroy@fleetwise.fr',
+    role: 'mechanic',
+    vehicleId: null,
+    joinDate: '2023-06-18',
+    status: 'active'
+  },
+  {
+    id: 'u8',
+    name: 'Lucie Moreau',
+    email: 'l.moreau@fleetwise.fr',
+    role: 'mechanic',
+    vehicleId: null,
+    joinDate: '2023-11-05',
+    status: 'inactive'
   }
-};
-
-// Profile functions
-export const profileService = {
-  getProfile: async () => {
-    if (!currentUser) return null;
-    return currentUser;
-  },
-  updateProfile: async (data: Partial<User>) => {
-    if (!currentUser) return null;
-    currentUser = { ...currentUser, ...data };
-    // Update in static users array too
-    const index = staticUsers.findIndex(u => u.id === currentUser?.id);
-    if (index >= 0) {
-      staticUsers[index] = { ...staticUsers[index], ...data };
-    }
-    return currentUser;
-  },
-  uploadAvatar: async (file: File) => {
-    // Simulate file upload by generating a fake URL
-    const fakeUrl = `https://example.com/avatar/${Date.now()}.jpg`;
-    
-    if (currentUser) {
-      currentUser.avatar_url = fakeUrl;
-    }
-    
-    return fakeUrl;
-  }
-};
-
-// User role functions
-export const roleService = {
-  getUserRole: () => {
-    if (!currentUser) return null;
-    return currentUser.role;
-  },
-  
-  updateUserRole: (userId: string, role: UserRole) => {
-    const index = staticUsers.findIndex(u => u.id === userId);
-    if (index >= 0) {
-      staticUsers[index].role = role;
-    }
-    // Update current user if it's the same
-    if (currentUser && currentUser.id === userId) {
-      currentUser.role = role;
-    }
-    return Promise.resolve();
-  },
-  
-  toggleUserStatus: (userId: string, active: boolean) => {
-    const index = staticUsers.findIndex(u => u.id === userId);
-    if (index >= 0) {
-      staticUsers[index].status = active ? "active" : "inactive";
-    }
-    
-    // Update current user if it's the same
-    if (currentUser && currentUser.id === userId) {
-      currentUser.status = active ? "active" : "inactive";
-    }
-    return Promise.resolve();
-  }
-};
-
-// Vehicle functions
-export const vehicleService = {
-  getVehicles: async () => {
-    return staticVehicles;
-  },
-  
-  addVehicle: async (vehicle: Omit<Vehicle, "id" | "created_at" | "updated_at" | "last_maintenance">) => {
-    const newVehicle: Vehicle = {
-      id: `${staticVehicles.length + 1}`,
-      ...vehicle,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      last_maintenance: null
-    };
-    
-    staticVehicles.push(newVehicle);
-    return newVehicle;
-  },
-  
-  updateVehicleStatus: async (id: string, status: "active" | "maintenance" | "inactive") => {
-    const index = staticVehicles.findIndex(v => v.id === id);
-    if (index >= 0) {
-      staticVehicles[index].status = status;
-      staticVehicles[index].updated_at = new Date().toISOString();
-    }
-    return staticVehicles[index];
-  }
-};
+];
