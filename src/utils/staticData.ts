@@ -1,6 +1,7 @@
 
 // Types de rôles utilisateur
 export type UserRole = 'admin' | 'manager' | 'mechanic' | 'driver';
+export type UserStatus = 'active' | 'inactive';
 
 // Service de gestion des rôles (simulation)
 class RoleService {
@@ -11,9 +12,107 @@ class RoleService {
     const randomIndex = Math.floor(Math.random() * roles.length);
     return roles[randomIndex];
   }
+  
+  // Méthode pour mettre à jour le rôle d'un utilisateur
+  updateUserRole(userId: string, newRole: UserRole): Promise<boolean> {
+    // Simulation de mise à jour de rôle
+    console.log(`Mise à jour du rôle pour l'utilisateur ${userId} vers ${newRole}`);
+    return Promise.resolve(true);
+  }
+  
+  // Méthode pour activer/désactiver un utilisateur
+  toggleUserStatus(userId: string): Promise<UserStatus> {
+    // Simulation de changement de statut
+    const newStatus: UserStatus = Math.random() > 0.5 ? 'active' : 'inactive';
+    console.log(`Changement de statut pour l'utilisateur ${userId}: ${newStatus}`);
+    return Promise.resolve(newStatus);
+  }
 }
 
 export const roleService = new RoleService();
+
+// Service d'authentification (simulation)
+class AuthService {
+  getUser() {
+    // Simuler la récupération d'un utilisateur connecté
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (isLoggedIn) {
+      return {
+        user: {
+          id: 'u1',
+          email: 'admin@fleetwise.fr',
+          firstName: 'Alexandre',
+          lastName: 'Dubois',
+          role: 'admin' as UserRole,
+        }
+      };
+    }
+    return { user: null };
+  }
+  
+  signIn(email: string, password: string): Promise<{user: any}> {
+    // Simuler une authentification
+    if (email && password) {
+      localStorage.setItem('isLoggedIn', 'true');
+      return Promise.resolve({
+        user: {
+          id: 'u1',
+          email,
+          firstName: 'Alexandre',
+          lastName: 'Dubois',
+          role: 'admin' as UserRole,
+        }
+      });
+    }
+    return Promise.reject(new Error('Identifiants invalides'));
+  }
+  
+  signOut(): Promise<void> {
+    localStorage.removeItem('isLoggedIn');
+    return Promise.resolve();
+  }
+}
+
+export const authService = new AuthService();
+
+// Service de profil utilisateur (simulation)
+class ProfileService {
+  getUserProfile(userId: string) {
+    // Simuler la récupération du profil
+    return {
+      id: userId,
+      firstName: 'Alexandre',
+      lastName: 'Dubois',
+      email: 'admin@fleetwise.fr',
+      role: 'admin' as UserRole,
+      joinDate: '2023-05-12',
+      department: 'Direction',
+      lastActivity: '2025-04-28T14:30:00Z',
+    };
+  }
+  
+  updateUserProfile(userId: string, data: any): Promise<boolean> {
+    console.log(`Mise à jour du profil pour ${userId}:`, data);
+    return Promise.resolve(true);
+  }
+}
+
+export const profileService = new ProfileService();
+
+// Service de gestion des véhicules (simulation)
+class VehicleService {
+  assignVehicleToUser(vehicleId: string, userId: string | null): Promise<boolean> {
+    console.log(`Assignation du véhicule ${vehicleId} à l'utilisateur ${userId || 'aucun'}`);
+    return Promise.resolve(true);
+  }
+  
+  changeVehicleStatus(vehicleId: string, status: string): Promise<boolean> {
+    console.log(`Changement du statut du véhicule ${vehicleId} à ${status}`);
+    return Promise.resolve(true);
+  }
+}
+
+export const vehicleService = new VehicleService();
 
 // Données de véhicules (simulation)
 export const vehiclesData = [
@@ -185,3 +284,7 @@ export const usersData = [
     status: 'inactive'
   }
 ];
+
+// Pour la compatibilité avec les autres fichiers
+export const staticUsers = usersData;
+export const staticVehicles = vehiclesData;
