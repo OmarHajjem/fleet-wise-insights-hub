@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ import {
   Wrench,
   Car,
   CalendarDays,
+  Loader,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,12 +39,26 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserRole } from "@/hooks/useUserRole";
 import AuthCheck from "@/components/auth/AuthCheck";
+import { staticVehicles, staticUsers } from "@/utils/staticData";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 const maintenanceRecords = [
   {
     id: 1,
     vehicleId: "AZ-103",
     vehicleModel: "Renault Kangoo",
+    vehicleDbId: "v1",
     type: "preventive",
     description: "Changement d'huile et filtres",
     status: "scheduled",
@@ -54,6 +70,7 @@ const maintenanceRecords = [
     id: 2,
     vehicleId: "TY-208",
     vehicleModel: "Toyota Corolla",
+    vehicleDbId: "v2",
     type: "corrective",
     description: "Remplacement des plaquettes de frein",
     status: "in_progress",
@@ -65,6 +82,7 @@ const maintenanceRecords = [
     id: 3,
     vehicleId: "KL-305",
     vehicleModel: "Peugeot Partner",
+    vehicleDbId: "v3",
     type: "preventive",
     description: "Révision annuelle",
     status: "scheduled",
@@ -76,6 +94,7 @@ const maintenanceRecords = [
     id: 4,
     vehicleId: "PL-542",
     vehicleModel: "Citroen Berlingo",
+    vehicleDbId: "v4",
     type: "corrective",
     description: "Réparation climatisation",
     status: "completed",
@@ -88,6 +107,7 @@ const maintenanceRecords = [
     id: 5,
     vehicleId: "RT-789",
     vehicleModel: "Ford Transit",
+    vehicleDbId: "v5",
     type: "regular",
     description: "Vidange + contrôle technique",
     status: "completed",
@@ -114,14 +134,47 @@ const maintenanceStatusLabels = {
 export default function Maintenance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [searchParams] = useSearchParams();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const navigate = useNavigate();
+  
+  const vehicleParam = searchParams.get('vehicle');
+
   const { role } = useUserRole();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const isMechanic = role === 'mechanic';
+  const isDriver = role === 'driver';
   const canManage = isAdmin || isManager;
   const canUpdateStatus = isAdmin || isManager || isMechanic;
 
-  const filteredMaintenance = maintenanceRecords.filter((record) => {
+  // Récupérer l'ID du chauffeur connecté (stocké dans sessionStorage)
+  const userEmail = sessionStorage.getItem('userEmail') || '';
+  const currentUserId = staticUsers.find(u => u.email === userEmail)?.id || '';
+  
+  // Récupérer les véhicules du chauffeur connecté
+  const driverVehicles = isDriver
+    ? staticVehicles.filter(v => v.driver_id === currentUserId)
+    : staticVehicles;
+  
+  const driverVehicleIds = driverVehicles.map(v => v.id);
+  
+  // Filtrer les maintenances selon le rôle
+  const userMaintenances = isDriver
+    ? maintenanceRecords.filter(record => driverVehicleIds.includes(record.vehicleDbId))
+    : maintenanceRecords;
+
+  const [newMaintenance, setNewMaintenance] = useState({
+    vehicleDbId: vehicleParam || "",
+    type: "regular",
+    description: "",
+    garage: "",
+    date: "",
+    estimatedCost: 0,
+  });
+
+  const filteredMaintenance = userMaintenances.filter((record) => {
     const matchesSearch =
       record.vehicleId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.vehicleModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,22 +189,197 @@ export default function Maintenance() {
     return matchesSearch;
   });
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewMaintenance({
+      ...newMaintenance,
+      [name]: name === "estimatedCost" ? parseFloat(value) || 0 : value,
+    });
+  };
+
+  const handleAddMaintenance = async () => {
+    if (!newMaintenance.vehicleDbId || !newMaintenance.description || !newMaintenance.date || !newMaintenance.garage) {
+      toast({
+        title: "Information manquante",
+        description: "Tous les champs sont obligatoires.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsPending(true);
+    try {
+      // Simuler l'ajout d'une maintenance
+      setTimeout(() => {
+        setDialogOpen(false);
+        toast({
+          title: "Maintenance planifiée",
+          description: "La maintenance a été planifiée avec succès.",
+        });
+        setIsPending(false);
+        
+        // Réinitialiser le formulaire
+        setNewMaintenance({
+          vehicleDbId: "",
+          type: "regular",
+          description: "",
+          garage: "",
+          date: "",
+          estimatedCost: 0,
+        });
+        
+        // Redirection si on vient de la page véhicules
+        if (vehicleParam) {
+          navigate('/maintenance');
+        }
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error("Erreur lors de la planification de la maintenance:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de planifier la maintenance.",
+        variant: "destructive",
+      });
+      setIsPending(false);
+    }
+  };
+
   return (
-    <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+    <AuthCheck>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestion de la maintenance</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {isDriver ? "Mes Maintenances" : "Gestion de la maintenance"}
+            </h1>
             <p className="text-muted-foreground">
-              Gérer les opérations de maintenance et de réparation de la flotte
+              {isDriver 
+                ? "Gérer les opérations de maintenance de vos véhicules"
+                : "Gérer les opérations de maintenance et de réparation de la flotte"
+              }
             </p>
           </div>
-          {canManage && (
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Planifier une maintenance
-            </Button>
-          )}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Planifier une maintenance
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Planifier une maintenance</DialogTitle>
+                <DialogDescription>
+                  Entrez les détails de la maintenance à planifier
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="vehicleDbId" className="text-right">
+                    Véhicule
+                  </Label>
+                  <select
+                    id="vehicleDbId"
+                    name="vehicleDbId"
+                    value={newMaintenance.vehicleDbId}
+                    onChange={handleInputChange}
+                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">Sélectionner un véhicule</option>
+                    {driverVehicles.map((vehicle) => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.license_plate} - {vehicle.model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="type" className="text-right">
+                    Type
+                  </Label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={newMaintenance.type}
+                    onChange={handleInputChange}
+                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="regular">Régulière</option>
+                    <option value="preventive">Préventive</option>
+                    <option value="corrective">Corrective</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Input
+                    id="description"
+                    name="description"
+                    value={newMaintenance.description}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                    placeholder="Description des travaux à effectuer"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="date" className="text-right">
+                    Date
+                  </Label>
+                  <Input
+                    id="date"
+                    name="date"
+                    type="date"
+                    value={newMaintenance.date}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="garage" className="text-right">
+                    Garage
+                  </Label>
+                  <Input
+                    id="garage"
+                    name="garage"
+                    value={newMaintenance.garage}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                    placeholder="Nom du garage"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="estimatedCost" className="text-right">
+                    Coût estimé (€)
+                  </Label>
+                  <Input
+                    id="estimatedCost"
+                    name="estimatedCost"
+                    type="number"
+                    value={newMaintenance.estimatedCost}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Annuler
+                </Button>
+                <Button onClick={handleAddMaintenance} disabled={isPending}>
+                  {isPending ? (
+                    <>
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      Planification...
+                    </>
+                  ) : (
+                    "Planifier"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -161,10 +389,10 @@ export default function Maintenance() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {maintenanceRecords.filter((r) => r.status === "scheduled").length}
+                {userMaintenances.filter((r) => r.status === "scheduled").length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Prochaine: {maintenanceRecords.find((r) => r.status === "scheduled")?.date}
+                Prochaine: {userMaintenances.find((r) => r.status === "scheduled")?.date || "Aucune"}
               </p>
             </CardContent>
           </Card>
@@ -174,7 +402,7 @@ export default function Maintenance() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {maintenanceRecords.filter((r) => r.status === "in_progress").length}
+                {userMaintenances.filter((r) => r.status === "in_progress").length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Véhicules actuellement en réparation
@@ -187,7 +415,7 @@ export default function Maintenance() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {maintenanceRecords
+                {userMaintenances
                   .filter((r) => r.status === "completed")
                   .reduce((sum, record) => sum + (record.actualCost || 0), 0)}
                 €
@@ -201,9 +429,14 @@ export default function Maintenance() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Opérations de maintenance</CardTitle>
+            <CardTitle>
+              {isDriver ? "Mes opérations de maintenance" : "Opérations de maintenance"}
+            </CardTitle>
             <CardDescription>
-              Historique et planification des opérations de maintenance
+              {isDriver 
+                ? "Historique et planification des opérations de maintenance de vos véhicules"
+                : "Historique et planification des opérations de maintenance"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>

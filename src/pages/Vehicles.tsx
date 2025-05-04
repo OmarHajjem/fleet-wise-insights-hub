@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +65,17 @@ export default function Vehicles() {
   const { role, isLoading: roleLoading } = useUserRole();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
-  const canEdit = isAdmin || isManager;
+  const isDriver = role === 'driver';
+  const canEdit = isAdmin || isManager || isDriver; // Chauffeurs peuvent aussi modifier
+  
+  // Récupérer l'ID du chauffeur connecté (stocké dans sessionStorage)
+  const userEmail = sessionStorage.getItem('userEmail') || '';
+  const currentUserId = staticUsers.find(u => u.email === userEmail)?.id || '';
+  
+  // Filtrer les véhicules selon le rôle
+  const userVehicles = isDriver 
+    ? staticVehicles.filter(v => v.driver_id === currentUserId)
+    : staticVehicles;
   
   const handleAddVehicle = async () => {
     if (!newVehicle.license_plate || !newVehicle.model) {
@@ -83,7 +94,7 @@ export default function Vehicles() {
         model: newVehicle.model,
         year: newVehicle.year,
         status: 'active' as const,
-        driver_id: newVehicle.driver_id || null,
+        driver_id: isDriver ? currentUserId : newVehicle.driver_id || null,
         fuel_level: 100,
       };
       
@@ -153,7 +164,7 @@ export default function Vehicles() {
     }
   };
   
-  const filteredVehicles = staticVehicles.filter(
+  const filteredVehicles = userVehicles.filter(
     (vehicle) =>
       vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,9 +209,14 @@ export default function Vehicles() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des véhicules</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {isDriver ? "Mes Véhicules" : "Gestion des véhicules"}
+          </h1>
           <p className="text-muted-foreground">
-            Gérer votre flotte de véhicules et leurs informations.
+            {isDriver 
+              ? "Gérer vos véhicules assignés et leurs informations."
+              : "Gérer votre flotte de véhicules et leurs informations."
+            }
           </p>
         </div>
         {canEdit && (
@@ -208,7 +224,7 @@ export default function Vehicles() {
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Ajouter un véhicule
+                {isDriver ? "Ajouter un véhicule" : "Ajouter un véhicule"}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -258,25 +274,27 @@ export default function Vehicles() {
                     className="col-span-3"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="driver" className="text-right">
-                    Conducteur
-                  </Label>
-                  <select
-                    id="driver"
-                    name="driver_id"
-                    value={newVehicle.driver_id}
-                    onChange={handleInputChange}
-                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <option value="">Non assigné</option>
-                    {staticUsers?.map((driver) => (
-                      <option key={driver.id} value={driver.id}>
-                        {`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || "Utilisateur " + driver.id.substring(0, 8)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {!isDriver && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="driver" className="text-right">
+                      Conducteur
+                    </Label>
+                    <select
+                      id="driver"
+                      name="driver_id"
+                      value={newVehicle.driver_id}
+                      onChange={handleInputChange}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Non assigné</option>
+                      {staticUsers?.map((driver) => (
+                        <option key={driver.id} value={driver.id}>
+                          {`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || "Utilisateur " + driver.id.substring(0, 8)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -300,9 +318,12 @@ export default function Vehicles() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Aperçu de la flotte</CardTitle>
+          <CardTitle>{isDriver ? "Mes véhicules" : "Aperçu de la flotte"}</CardTitle>
           <CardDescription>
-            Vue d'ensemble des {isLoading ? "..." : staticVehicles?.length || 0} véhicules de votre flotte
+            {isDriver 
+              ? `Vue d'ensemble de vos ${isLoading ? "..." : filteredVehicles?.length || 0} véhicule(s) assigné(s)`
+              : `Vue d'ensemble des ${isLoading ? "..." : staticVehicles?.length || 0} véhicules de votre flotte`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -329,7 +350,7 @@ export default function Vehicles() {
                   <TableHead>Modèle</TableHead>
                   <TableHead>Année</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead>Conducteur</TableHead>
+                  {!isDriver && <TableHead>Conducteur</TableHead>}
                   <TableHead>Dernière maintenance</TableHead>
                   <TableHead>Niveau carburant</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -338,7 +359,7 @@ export default function Vehicles() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={isDriver ? 7 : 8} className="h-24 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <Loader className="h-8 w-8 mb-2 animate-spin" />
                         <p>Chargement des véhicules...</p>
@@ -363,7 +384,7 @@ export default function Vehicles() {
                           {statusLabels[vehicle.status].label}
                         </Badge>
                       </TableCell>
-                      <TableCell>{getDriverName(vehicle.driver_id)}</TableCell>
+                      {!isDriver && <TableCell>{getDriverName(vehicle.driver_id)}</TableCell>}
                       <TableCell>{formatDate(vehicle.last_maintenance)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -432,7 +453,7 @@ export default function Vehicles() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={isDriver ? 7 : 8} className="h-24 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <Car className="h-8 w-8 mb-2 opacity-50" />
                         <p>Aucun véhicule trouvé</p>
