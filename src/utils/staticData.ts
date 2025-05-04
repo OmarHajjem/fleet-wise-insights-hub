@@ -33,6 +33,8 @@ export const roleService = new RoleService();
 
 // Service d'authentification (simulation)
 class AuthService {
+  private listeners: Function[] = [];
+
   getUser() {
     // Simuler la récupération d'un utilisateur connecté
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -44,6 +46,7 @@ class AuthService {
           firstName: 'Alexandre',
           lastName: 'Dubois',
           role: 'admin' as UserRole,
+          avatar_url: null
         }
       };
     }
@@ -54,22 +57,39 @@ class AuthService {
     // Simuler une authentification
     if (email && password) {
       localStorage.setItem('isLoggedIn', 'true');
-      return Promise.resolve({
-        user: {
-          id: 'u1',
-          email,
-          firstName: 'Alexandre',
-          lastName: 'Dubois',
-          role: 'admin' as UserRole,
-        }
-      });
+      const user = {
+        id: 'u1',
+        email,
+        firstName: 'Alexandre',
+        lastName: 'Dubois',
+        role: 'admin' as UserRole,
+        avatar_url: null
+      };
+      
+      // Notifier les écouteurs
+      this.listeners.forEach(listener => listener(user));
+      
+      return Promise.resolve({ user });
     }
     return Promise.reject(new Error('Identifiants invalides'));
   }
   
   signOut(): Promise<void> {
     localStorage.removeItem('isLoggedIn');
+    
+    // Notifier les écouteurs
+    this.listeners.forEach(listener => listener(null));
+    
     return Promise.resolve();
+  }
+  
+  onAuthStateChange(callback: (user: any) => void) {
+    this.listeners.push(callback);
+    return {
+      unsubscribe: () => {
+        this.listeners = this.listeners.filter(listener => listener !== callback);
+      }
+    };
   }
 }
 
@@ -88,12 +108,27 @@ class ProfileService {
       joinDate: '2023-05-12',
       department: 'Direction',
       lastActivity: '2025-04-28T14:30:00Z',
+      avatar_url: null
     };
   }
   
   updateUserProfile(userId: string, data: any): Promise<boolean> {
     console.log(`Mise à jour du profil pour ${userId}:`, data);
     return Promise.resolve(true);
+  }
+  
+  getProfile(userId: string) {
+    return Promise.resolve(this.getUserProfile(userId));
+  }
+  
+  updateProfile(userId: string, data: any): Promise<boolean> {
+    return this.updateUserProfile(userId, data);
+  }
+  
+  uploadAvatar(userId: string, file: File): Promise<string> {
+    console.log(`Téléchargement de l'avatar pour ${userId}`);
+    // Simuler un URL pour l'avatar
+    return Promise.resolve(`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(file.name)}`);
   }
 }
 
@@ -110,6 +145,15 @@ class VehicleService {
     console.log(`Changement du statut du véhicule ${vehicleId} à ${status}`);
     return Promise.resolve(true);
   }
+  
+  addVehicle(data: any): Promise<{id: string}> {
+    console.log(`Ajout d'un nouveau véhicule:`, data);
+    return Promise.resolve({id: 'v' + Math.floor(Math.random() * 1000)});
+  }
+  
+  updateVehicleStatus(vehicleId: string, status: string): Promise<boolean> {
+    return this.changeVehicleStatus(vehicleId, status);
+  }
 }
 
 export const vehicleService = new VehicleService();
@@ -123,10 +167,16 @@ export const vehiclesData = [
     status: 'active',
     location: { lat: 48.8566, lng: 2.3522 },
     driver: 'Jean Dupont',
+    driver_id: 'u3',
     lastMaintenance: '2025-03-15',
+    last_maintenance: '2025-03-15',
     nextMaintenance: '2025-06-15',
     emissions: 0,
-    efficiency: 92
+    efficiency: 92,
+    model: 'Kangoo E-Tech',
+    license_plate: 'AB-123-CD',
+    year: 2023,
+    fuel_level: 80
   },
   { 
     id: 'v2', 
@@ -135,10 +185,16 @@ export const vehiclesData = [
     status: 'maintenance',
     location: { lat: 48.8606, lng: 2.3376 },
     driver: 'Marie Laurent',
+    driver_id: 'u4',
     lastMaintenance: '2025-01-10',
+    last_maintenance: '2025-01-10',
     nextMaintenance: '2025-04-10',
     emissions: 0,
-    efficiency: 88
+    efficiency: 88,
+    model: 'e-Partner',
+    license_plate: 'BC-456-DE',
+    year: 2024,
+    fuel_level: 65
   },
   { 
     id: 'v3', 
@@ -147,10 +203,16 @@ export const vehiclesData = [
     status: 'active',
     location: { lat: 48.8496, lng: 2.3395 },
     driver: 'Thomas Martin',
+    driver_id: 'u5',
     lastMaintenance: '2025-02-22',
+    last_maintenance: '2025-02-22',
     nextMaintenance: '2025-05-22',
     emissions: 145,
-    efficiency: 65
+    efficiency: 65,
+    model: 'Berlingo',
+    license_plate: 'CD-789-EF',
+    year: 2022,
+    fuel_level: 30
   },
   { 
     id: 'v4', 
@@ -159,10 +221,16 @@ export const vehiclesData = [
     status: 'inactive',
     location: { lat: 48.8737, lng: 2.2950 },
     driver: 'Non assigné',
+    driver_id: null,
     lastMaintenance: '2025-03-05',
+    last_maintenance: '2025-03-05',
     nextMaintenance: '2025-06-05',
     emissions: 195,
-    efficiency: 58
+    efficiency: 58,
+    model: 'Ducato',
+    license_plate: 'DE-012-FG',
+    year: 2021,
+    fuel_level: 45
   },
   { 
     id: 'v5', 
@@ -171,10 +239,16 @@ export const vehiclesData = [
     status: 'active',
     location: { lat: 48.8417, lng: 2.3275 },
     driver: 'Sophie Bernard',
+    driver_id: 'u6',
     lastMaintenance: '2025-04-01',
+    last_maintenance: '2025-04-01',
     nextMaintenance: '2025-07-01',
     emissions: 0,
-    efficiency: 95
+    efficiency: 95,
+    model: 'Model 3',
+    license_plate: 'EF-345-GH',
+    year: 2024,
+    fuel_level: 90
   }
 ];
 
@@ -218,7 +292,12 @@ export const usersData = [
     role: 'admin',
     vehicleId: null,
     joinDate: '2023-05-12',
-    status: 'active'
+    status: 'active',
+    firstName: 'Alexandre',
+    lastName: 'Dubois',
+    assignedVehicle: null,
+    lastActive: '2025-04-28T14:30:00Z',
+    avatar_url: null
   },
   {
     id: 'u2',
@@ -227,7 +306,12 @@ export const usersData = [
     role: 'manager',
     vehicleId: null,
     joinDate: '2023-07-22',
-    status: 'active'
+    status: 'active',
+    firstName: 'Émilie',
+    lastName: 'Laurent',
+    assignedVehicle: null,
+    lastActive: '2025-04-27T10:15:00Z',
+    avatar_url: null
   },
   {
     id: 'u3',
@@ -236,7 +320,12 @@ export const usersData = [
     role: 'driver',
     vehicleId: 'v1',
     joinDate: '2023-09-05',
-    status: 'active'
+    status: 'active',
+    firstName: 'Jean',
+    lastName: 'Dupont',
+    assignedVehicle: 'Renault Kangoo E-Tech',
+    lastActive: '2025-04-28T08:45:00Z',
+    avatar_url: null
   },
   {
     id: 'u4',
@@ -245,7 +334,12 @@ export const usersData = [
     role: 'driver',
     vehicleId: 'v2',
     joinDate: '2023-08-15',
-    status: 'active'
+    status: 'active',
+    firstName: 'Marie',
+    lastName: 'Laurent',
+    assignedVehicle: 'Peugeot e-Partner',
+    lastActive: '2025-04-26T16:20:00Z',
+    avatar_url: null
   },
   {
     id: 'u5',
@@ -254,7 +348,12 @@ export const usersData = [
     role: 'driver',
     vehicleId: 'v3',
     joinDate: '2023-10-20',
-    status: 'active'
+    status: 'active',
+    firstName: 'Thomas',
+    lastName: 'Martin',
+    assignedVehicle: 'Citroën Berlingo',
+    lastActive: '2025-04-27T12:10:00Z',
+    avatar_url: null
   },
   {
     id: 'u6',
@@ -263,7 +362,12 @@ export const usersData = [
     role: 'driver',
     vehicleId: 'v5',
     joinDate: '2024-01-10',
-    status: 'active'
+    status: 'active',
+    firstName: 'Sophie',
+    lastName: 'Bernard',
+    assignedVehicle: 'Tesla Model 3',
+    lastActive: '2025-04-28T09:30:00Z',
+    avatar_url: null
   },
   {
     id: 'u7',
@@ -272,7 +376,12 @@ export const usersData = [
     role: 'mechanic',
     vehicleId: null,
     joinDate: '2023-06-18',
-    status: 'active'
+    status: 'active',
+    firstName: 'Pierre',
+    lastName: 'Leroy',
+    assignedVehicle: null,
+    lastActive: '2025-04-25T14:40:00Z',
+    avatar_url: null
   },
   {
     id: 'u8',
@@ -281,7 +390,12 @@ export const usersData = [
     role: 'mechanic',
     vehicleId: null,
     joinDate: '2023-11-05',
-    status: 'inactive'
+    status: 'inactive',
+    firstName: 'Lucie',
+    lastName: 'Moreau',
+    assignedVehicle: null,
+    lastActive: '2025-03-15T11:25:00Z',
+    avatar_url: null
   }
 ];
 
