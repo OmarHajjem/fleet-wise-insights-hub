@@ -20,7 +20,9 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { UserRole } from "@/types/user";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   isCollapsed?: boolean;
@@ -34,6 +36,7 @@ export function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const [isCollapsedState, setIsCollapsedState] = useState(isCollapsed);
+  const { role } = useUserRole();
   
   const collapsed = setIsCollapsed ? isCollapsed : isCollapsedState;
   const toggleCollapsed = () => {
@@ -43,6 +46,142 @@ export function Sidebar({
       setIsCollapsedState(!collapsed);
     }
   };
+
+  // Définir les items de menu en fonction du rôle
+  const getMenuItems = (role: UserRole | null) => {
+    // Éléments de menu communs à tous les utilisateurs
+    const commonItems = [
+      {
+        icon: Home,
+        label: "Tableau de bord",
+        to: "/dashboard",
+        isActive: location.pathname === "/" || location.pathname === "/dashboard",
+      },
+    ];
+
+    // Items spécifiques pour chaque rôle
+    switch (role) {
+      case 'driver':
+        // Le chauffeur a accès uniquement au tableau de bord, à ses notifications et maintenance
+        return [
+          ...commonItems,
+          {
+            icon: Car,
+            label: "Mes véhicules",
+            to: "/vehicles",
+            isActive: location.pathname.startsWith("/vehicles"),
+          },
+          {
+            icon: Wrench,
+            label: "Maintenance",
+            to: "/maintenance",
+            isActive: location.pathname.startsWith("/maintenance"),
+          },
+          {
+            icon: Bell,
+            label: "Notifications",
+            to: "/notifications",
+            isActive: location.pathname.startsWith("/notifications"),
+          },
+        ];
+
+      case 'mechanic':
+        // Le mécanicien a accès uniquement au module maintenance
+        return [
+          ...commonItems,
+          {
+            icon: Wrench,
+            label: "Maintenance",
+            to: "/maintenance",
+            isActive: location.pathname.startsWith("/maintenance"),
+          },
+        ];
+
+      case 'manager':
+        // Le gestionnaire a les mêmes accès que l'admin sauf la gestion des utilisateurs
+        return [
+          ...commonItems,
+          {
+            icon: Car,
+            label: "Véhicules",
+            to: "/vehicles",
+            isActive: location.pathname.startsWith("/vehicles"),
+          },
+          {
+            icon: Wrench,
+            label: "Maintenance",
+            to: "/maintenance",
+            isActive: location.pathname.startsWith("/maintenance"),
+          },
+          {
+            icon: Building,
+            label: "Garages",
+            to: "/garages",
+            isActive: location.pathname.startsWith("/garages"),
+          },
+          {
+            icon: Bell,
+            label: "Notifications",
+            to: "/notifications",
+            isActive: location.pathname.startsWith("/notifications"),
+          },
+          {
+            icon: Settings,
+            label: "Paramètres",
+            to: "/settings",
+            isActive: location.pathname.startsWith("/settings"),
+          },
+        ];
+
+      case 'admin':
+        // L'administrateur a accès à tout
+        return [
+          ...commonItems,
+          {
+            icon: Car,
+            label: "Véhicules",
+            to: "/vehicles",
+            isActive: location.pathname.startsWith("/vehicles"),
+          },
+          {
+            icon: Users,
+            label: "Utilisateurs",
+            to: "/users",
+            isActive: location.pathname.startsWith("/users"),
+          },
+          {
+            icon: Wrench,
+            label: "Maintenance",
+            to: "/maintenance",
+            isActive: location.pathname.startsWith("/maintenance"),
+          },
+          {
+            icon: Building,
+            label: "Garages",
+            to: "/garages",
+            isActive: location.pathname.startsWith("/garages"),
+          },
+          {
+            icon: Bell,
+            label: "Notifications",
+            to: "/notifications",
+            isActive: location.pathname.startsWith("/notifications"),
+          },
+          {
+            icon: Settings,
+            label: "Paramètres",
+            to: "/settings",
+            isActive: location.pathname.startsWith("/settings"),
+          },
+        ];
+
+      default:
+        // Si pas de rôle défini, retourner le menu par défaut
+        return commonItems;
+    }
+  };
+
+  const menuItems = getMenuItems(role);
 
   return (
     <div className={cn("relative", className)}>
@@ -87,58 +226,16 @@ export function Sidebar({
         <ScrollArea className="flex-1">
           <div className="px-2 py-4">
             <nav className="grid gap-1">
-              <SidebarItem 
-                icon={Home} 
-                label="Tableau de bord" 
-                to="/" 
-                isActive={location.pathname === "/"}
-                collapsed={collapsed}
-              />
-              <SidebarItem 
-                icon={Car} 
-                label="Véhicules" 
-                to="/vehicles" 
-                isActive={location.pathname.startsWith("/vehicles")}
-                collapsed={collapsed}
-              />
-              <SidebarItem 
-                icon={Users} 
-                label="Utilisateurs" 
-                to="/users" 
-                isActive={location.pathname.startsWith("/users")}
-                collapsed={collapsed}
-              />
-              <SidebarItem 
-                icon={Wrench} 
-                label="Maintenance" 
-                to="/maintenance" 
-                isActive={location.pathname.startsWith("/maintenance")}
-                collapsed={collapsed}
-              />
-              <SidebarItem 
-                icon={Building} 
-                label="Garages" 
-                to="/garages" 
-                isActive={location.pathname.startsWith("/garages")}
-                collapsed={collapsed}
-              />
-              <SidebarItem 
-                icon={Bell} 
-                label="Notifications" 
-                to="/notifications" 
-                isActive={location.pathname.startsWith("/notifications")}
-                collapsed={collapsed}
-              />
-              
-              <Separator className="my-3 bg-sidebar-border" />
-              
-              <SidebarItem 
-                icon={Settings} 
-                label="Paramètres" 
-                to="/settings" 
-                isActive={location.pathname.startsWith("/settings")}
-                collapsed={collapsed}
-              />
+              {menuItems.map((item) => (
+                <SidebarItem 
+                  key={item.to}
+                  icon={item.icon} 
+                  label={item.label} 
+                  to={item.to} 
+                  isActive={item.isActive}
+                  collapsed={collapsed}
+                />
+              ))}
             </nav>
           </div>
         </ScrollArea>
@@ -146,12 +243,19 @@ export function Sidebar({
         <div className="mt-auto p-4 border-t border-sidebar-border">
           <div className={cn("flex items-center gap-3", collapsed && "flex-col")}>
             <div className="h-9 w-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <span className="text-sm font-medium text-sidebar-accent-foreground">AD</span>
+              <span className="text-sm font-medium text-sidebar-accent-foreground">
+                {role ? role.substring(0, 2).toUpperCase() : "??"}
+              </span>
             </div>
             {!collapsed && (
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Admin</span>
-                <span className="text-xs text-sidebar-foreground/70">admin@gestionflotte.fr</span>
+                <span className="text-sm font-medium">{role ? role.charAt(0).toUpperCase() + role.slice(1) : "Non connecté"}</span>
+                <span className="text-xs text-sidebar-foreground/70">
+                  {role === 'admin' && "admin@gestionflotte.fr"}
+                  {role === 'manager' && "manager@gestionflotte.fr"}
+                  {role === 'mechanic' && "mechanic@gestionflotte.fr"}
+                  {role === 'driver' && "driver@gestionflotte.fr"}
+                </span>
               </div>
             )}
           </div>

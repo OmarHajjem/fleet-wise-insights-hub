@@ -54,6 +54,7 @@ class AuthService {
     if (isLoggedIn) {
       // Get the role from sessionStorage if it exists
       const storedRole = sessionStorage.getItem('userRole');
+      const userEmail = sessionStorage.getItem('userEmail') || 'admin@fleetwise.fr';
       const role = storedRole && ['admin', 'manager', 'mechanic', 'driver'].includes(storedRole) 
         ? storedRole as UserRole 
         : 'driver';
@@ -61,9 +62,9 @@ class AuthService {
       return {
         user: {
           id: 'u1',
-          email: 'admin@fleetwise.fr',
-          firstName: 'Alexandre',
-          lastName: 'Dubois',
+          email: userEmail,
+          firstName: userEmail.split('@')[0],
+          lastName: 'Utilisateur',
           role: role,
           avatar_url: null
         }
@@ -76,6 +77,7 @@ class AuthService {
     // Simuler une authentification
     if (email && password) {
       localStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem('userEmail', email);
       
       // For this simulation, assign a role based on email for consistent experience
       let role: UserRole = 'driver';
@@ -97,7 +99,7 @@ class AuthService {
         id: 'u1',
         email,
         firstName: email.split('@')[0],
-        lastName: 'User',
+        lastName: 'Utilisateur',
         role: role,
         avatar_url: null
       };
@@ -113,6 +115,7 @@ class AuthService {
   signOut(): Promise<void> {
     localStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('userEmail');
     
     // Notifier les écouteurs
     this.listeners.forEach(listener => listener(null));
