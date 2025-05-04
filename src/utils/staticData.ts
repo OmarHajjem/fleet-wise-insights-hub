@@ -7,11 +7,23 @@ export type { UserRole, UserStatus };
 // Service de gestion des rôles (simulation)
 class RoleService {
   getUserRole(): UserRole {
+    // Check if a role is already stored
+    const storedRole = sessionStorage.getItem('userRole');
+    
+    if (storedRole && ['admin', 'manager', 'mechanic', 'driver'].includes(storedRole)) {
+      return storedRole as UserRole;
+    }
+    
     // Simuler la récupération du rôle depuis une API
     // En production, cela viendrait d'une API ou d'un stockage sécurisé
     const roles: UserRole[] = ['admin', 'manager', 'mechanic', 'driver'];
     const randomIndex = Math.floor(Math.random() * roles.length);
-    return roles[randomIndex];
+    const role = roles[randomIndex];
+    
+    // Store the role in sessionStorage
+    sessionStorage.setItem('userRole', role);
+    
+    return role;
   }
   
   // Méthode pour mettre à jour le rôle d'un utilisateur
@@ -40,13 +52,19 @@ class AuthService {
     // Simuler la récupération d'un utilisateur connecté
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     if (isLoggedIn) {
+      // Get the role from sessionStorage if it exists
+      const storedRole = sessionStorage.getItem('userRole');
+      const role = storedRole && ['admin', 'manager', 'mechanic', 'driver'].includes(storedRole) 
+        ? storedRole as UserRole 
+        : 'driver';
+        
       return {
         user: {
           id: 'u1',
           email: 'admin@fleetwise.fr',
           firstName: 'Alexandre',
           lastName: 'Dubois',
-          role: 'admin' as UserRole,
+          role: role,
           avatar_url: null
         }
       };
@@ -58,12 +76,29 @@ class AuthService {
     // Simuler une authentification
     if (email && password) {
       localStorage.setItem('isLoggedIn', 'true');
+      
+      // For this simulation, assign a role based on email for consistent experience
+      let role: UserRole = 'driver';
+      
+      if (email.includes('admin')) {
+        role = 'admin';
+      } else if (email.includes('manager')) {
+        role = 'manager';
+      } else if (email.includes('mechanic')) {
+        role = 'mechanic';
+      } else {
+        role = 'driver';
+      }
+      
+      // Store the role
+      sessionStorage.setItem('userRole', role);
+      
       const user = {
         id: 'u1',
         email,
-        firstName: 'Alexandre',
-        lastName: 'Dubois',
-        role: 'admin' as UserRole,
+        firstName: email.split('@')[0],
+        lastName: 'User',
+        role: role,
         avatar_url: null
       };
       
@@ -77,6 +112,7 @@ class AuthService {
   
   signOut(): Promise<void> {
     localStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('userRole');
     
     // Notifier les écouteurs
     this.listeners.forEach(listener => listener(null));

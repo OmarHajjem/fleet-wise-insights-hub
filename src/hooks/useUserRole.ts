@@ -14,8 +14,18 @@ export const useUserRole = () => {
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
-        const userRole = roleService.getUserRole();
-        setRole(userRole);
+        // Check if a role is already stored in session
+        const storedRole = sessionStorage.getItem('userRole');
+        
+        if (storedRole && ['admin', 'manager', 'mechanic', 'driver'].includes(storedRole)) {
+          // Use the stored role if it exists and is valid
+          setRole(storedRole as UserRole);
+        } else {
+          // If no role exists, get one from the service and store it
+          const userRole = roleService.getUserRole();
+          sessionStorage.setItem('userRole', userRole);
+          setRole(userRole);
+        }
       } catch (error) {
         console.error("Erreur lors de la récupération du rôle:", error);
         toast({

@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import AuthCheck from "./components/auth/AuthCheck";
+import { authService } from "./utils/staticData";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,62 +26,66 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <Toaster />
-    <Sonner />
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/auth" replace />} />
-        <Route path="/auth" element={<Auth />} />
-        
-        <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={
-            <AuthCheck>
-              <Dashboard />
-            </AuthCheck>
-          } />
-          <Route path="/vehicles" element={
-            <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
-              <Vehicles />
-            </AuthCheck>
-          } />
-          <Route path="/users" element={
-            <AuthCheck requiredRoles={['admin', 'manager']}>
-              <Users />
-            </AuthCheck>
-          } />
-          <Route path="/maintenance" element={
-            <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
-              <Maintenance />
-            </AuthCheck>
-          } />
-          <Route path="/garages" element={
-            <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
-              <Garages />
-            </AuthCheck>
-          } />
-          <Route path="/notifications" element={
-            <AuthCheck>
-              <Notifications />
-            </AuthCheck>
-          } />
-          <Route path="/settings" element={
-            <AuthCheck requiredRoles={['admin']}>
-              <Settings />
-            </AuthCheck>
-          } />
-          <Route path="/profile" element={
-            <AuthCheck>
-              <Profile />
-            </AuthCheck>
-          } />
-        </Route>
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+const App = () => {
+  const { user } = authService.getUser();
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
+          <Route path="/auth" element={<Auth />} />
+          
+          <Route element={<MainLayout />}>
+            <Route path="/dashboard" element={
+              <AuthCheck>
+                <Dashboard />
+              </AuthCheck>
+            } />
+            <Route path="/vehicles" element={
+              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+                <Vehicles />
+              </AuthCheck>
+            } />
+            <Route path="/users" element={
+              <AuthCheck requiredRoles={['admin', 'manager']}>
+                <Users />
+              </AuthCheck>
+            } />
+            <Route path="/maintenance" element={
+              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+                <Maintenance />
+              </AuthCheck>
+            } />
+            <Route path="/garages" element={
+              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+                <Garages />
+              </AuthCheck>
+            } />
+            <Route path="/notifications" element={
+              <AuthCheck>
+                <Notifications />
+              </AuthCheck>
+            } />
+            <Route path="/settings" element={
+              <AuthCheck requiredRoles={['admin']}>
+                <Settings />
+              </AuthCheck>
+            } />
+            <Route path="/profile" element={
+              <AuthCheck>
+                <Profile />
+              </AuthCheck>
+            } />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
