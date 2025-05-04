@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, AlertTriangle } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -13,7 +14,8 @@ import { toast } from "@/hooks/use-toast";
 import AuthCheck from "@/components/auth/AuthCheck";
 import { UserTable } from "@/components/users/UserTable";
 import { UserSearch } from "@/components/users/UserSearch";
-import { staticUsers, roleService, UserRole, UserStatus } from "@/utils/staticData";
+import { staticUsers, roleService } from "@/utils/staticData";
+import { User, UserRole } from "@/types/user";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,7 +65,7 @@ export default function Users() {
       (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.assignedVehicle && user.assignedVehicle.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) as User[]; // Cast to User[] type since we know our data structure matches
 
   if (!canManageUsers) {
     return (
@@ -101,7 +103,7 @@ export default function Users() {
         <CardHeader className="pb-3">
           <CardTitle>Utilisateurs</CardTitle>
           <CardDescription>
-            {isLoading ? "Chargement..." : `${staticUsers.length || 0} utilisateurs enregistrés dans le système`}
+            {isLoading ? "Chargement..." : `${filteredUsers.length || 0} utilisateurs enregistrés dans le système`}
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,7 +1,6 @@
 
 // Types de rôles utilisateur
-export type UserRole = 'admin' | 'manager' | 'mechanic' | 'driver';
-export type UserStatus = 'active' | 'inactive';
+import { UserRole, UserStatus } from "@/types/user";
 
 // Service de gestion des rôles (simulation)
 class RoleService {
@@ -21,11 +20,11 @@ class RoleService {
   }
   
   // Méthode pour activer/désactiver un utilisateur
-  toggleUserStatus(userId: string): Promise<UserStatus> {
+  toggleUserStatus(userId: string, active: boolean): Promise<boolean> {
     // Simulation de changement de statut
-    const newStatus: UserStatus = Math.random() > 0.5 ? 'active' : 'inactive';
+    const newStatus: UserStatus = active ? 'active' : 'inactive';
     console.log(`Changement de statut pour l'utilisateur ${userId}: ${newStatus}`);
-    return Promise.resolve(newStatus);
+    return Promise.resolve(true);
   }
 }
 
@@ -108,7 +107,8 @@ class ProfileService {
       joinDate: '2023-05-12',
       department: 'Direction',
       lastActivity: '2025-04-28T14:30:00Z',
-      avatar_url: null
+      avatar_url: null,
+      phone: '06 12 34 56 78' // Added phone property
     };
   }
   
@@ -117,16 +117,18 @@ class ProfileService {
     return Promise.resolve(true);
   }
   
-  getProfile(userId: string) {
-    return Promise.resolve(this.getUserProfile(userId));
+  getProfile(): Promise<any> {
+    // Using a default user ID since we're simulating
+    return Promise.resolve(this.getUserProfile('u1'));
   }
   
-  updateProfile(userId: string, data: any): Promise<boolean> {
-    return this.updateUserProfile(userId, data);
+  updateProfile(data: any): Promise<boolean> {
+    // Using a default user ID since we're simulating
+    return this.updateUserProfile('u1', data);
   }
   
-  uploadAvatar(userId: string, file: File): Promise<string> {
-    console.log(`Téléchargement de l'avatar pour ${userId}`);
+  uploadAvatar(file: File): Promise<string> {
+    console.log(`Téléchargement de l'avatar`);
     // Simuler un URL pour l'avatar
     return Promise.resolve(`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(file.name)}`);
   }
@@ -289,10 +291,10 @@ export const usersData = [
     id: 'u1',
     name: 'Alexandre Dubois',
     email: 'a.dubois@fleetwise.fr',
-    role: 'admin',
+    role: 'admin' as UserRole,
     vehicleId: null,
     joinDate: '2023-05-12',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Alexandre',
     lastName: 'Dubois',
     assignedVehicle: null,
@@ -303,10 +305,10 @@ export const usersData = [
     id: 'u2',
     name: 'Émilie Laurent',
     email: 'e.laurent@fleetwise.fr',
-    role: 'manager',
+    role: 'manager' as UserRole,
     vehicleId: null,
     joinDate: '2023-07-22',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Émilie',
     lastName: 'Laurent',
     assignedVehicle: null,
@@ -317,10 +319,10 @@ export const usersData = [
     id: 'u3',
     name: 'Jean Dupont',
     email: 'j.dupont@fleetwise.fr',
-    role: 'driver',
+    role: 'driver' as UserRole,
     vehicleId: 'v1',
     joinDate: '2023-09-05',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Jean',
     lastName: 'Dupont',
     assignedVehicle: 'Renault Kangoo E-Tech',
@@ -331,10 +333,10 @@ export const usersData = [
     id: 'u4',
     name: 'Marie Laurent',
     email: 'm.laurent@fleetwise.fr',
-    role: 'driver',
+    role: 'driver' as UserRole,
     vehicleId: 'v2',
     joinDate: '2023-08-15',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Marie',
     lastName: 'Laurent',
     assignedVehicle: 'Peugeot e-Partner',
@@ -345,10 +347,10 @@ export const usersData = [
     id: 'u5',
     name: 'Thomas Martin',
     email: 't.martin@fleetwise.fr',
-    role: 'driver',
+    role: 'driver' as UserRole,
     vehicleId: 'v3',
     joinDate: '2023-10-20',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Thomas',
     lastName: 'Martin',
     assignedVehicle: 'Citroën Berlingo',
@@ -359,10 +361,10 @@ export const usersData = [
     id: 'u6',
     name: 'Sophie Bernard',
     email: 's.bernard@fleetwise.fr',
-    role: 'driver',
+    role: 'driver' as UserRole,
     vehicleId: 'v5',
     joinDate: '2024-01-10',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Sophie',
     lastName: 'Bernard',
     assignedVehicle: 'Tesla Model 3',
@@ -373,10 +375,10 @@ export const usersData = [
     id: 'u7',
     name: 'Pierre Leroy',
     email: 'p.leroy@fleetwise.fr',
-    role: 'mechanic',
+    role: 'mechanic' as UserRole,
     vehicleId: null,
     joinDate: '2023-06-18',
-    status: 'active',
+    status: 'active' as UserStatus,
     firstName: 'Pierre',
     lastName: 'Leroy',
     assignedVehicle: null,
@@ -387,10 +389,10 @@ export const usersData = [
     id: 'u8',
     name: 'Lucie Moreau',
     email: 'l.moreau@fleetwise.fr',
-    role: 'mechanic',
+    role: 'mechanic' as UserRole,
     vehicleId: null,
     joinDate: '2023-11-05',
-    status: 'inactive',
+    status: 'inactive' as UserStatus,
     firstName: 'Lucie',
     lastName: 'Moreau',
     assignedVehicle: null,
@@ -402,3 +404,4 @@ export const usersData = [
 // Pour la compatibilité avec les autres fichiers
 export const staticUsers = usersData;
 export const staticVehicles = vehiclesData;
+
