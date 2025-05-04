@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
-import { roleService, UserRole } from "@/utils/staticData";
+import { roleService } from "@/utils/staticData";
+import { UserRole } from "@/types/user";
 
-// Re-export the UserRole type properly using 'export type'
+// Re-export the UserRole type properly
 export type { UserRole };
 
 export const useUserRole = () => {

@@ -1,6 +1,8 @@
+// Import UserRole from types/user.ts instead of redeclaring it
+import { UserRole, UserStatus, User } from "@/types/user";
 
-// Types de rôles utilisateur
-import { UserRole, UserStatus } from "@/types/user";
+// Re-export the UserRole type
+export type { UserRole, UserStatus };
 
 // Service de gestion des rôles (simulation)
 class RoleService {
@@ -404,4 +406,3 @@ export const usersData = [
 // Pour la compatibilité avec les autres fichiers
 export const staticUsers = usersData;
 export const staticVehicles = vehiclesData;
-

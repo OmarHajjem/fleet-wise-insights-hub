@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import type { UserRole } from "@/utils/staticData";
+import { UserRole } from "@/types/user";
 import { authService } from "@/utils/staticData";
 import { Badge } from "@/components/ui/badge";
 
