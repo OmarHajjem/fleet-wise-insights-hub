@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +51,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const maintenanceRecords = [
   {
@@ -131,6 +137,58 @@ const maintenanceStatusLabels = {
   cancelled: { label: "Annulée", color: "bg-red-100 text-red-800" },
 };
 
+// Récupérer la liste des garages depuis les données statiques
+const garages = [
+  {
+    id: 1,
+    name: "AutoMécanique Paris",
+    address: "23 Rue Nationale, 75013 Paris",
+    phone: "01 42 65 87 34",
+    specialties: ["électrique", "mécanique générale"],
+    status: "available",
+    vehiclesInService: 2,
+  },
+  {
+    id: 2,
+    name: "Toyota Service Lyon",
+    address: "156 Avenue Berthelot, 69007 Lyon",
+    phone: "04 72 73 38 90",
+    specialties: ["Toyota", "hybride"],
+    status: "available",
+    vehiclesInService: 1,
+  },
+  {
+    id: 3,
+    name: "Garage Central Marseille",
+    address: "45 Boulevard Michelet, 13009 Marseille",
+    phone: "04 91 22 10 50",
+    specialties: ["Peugeot", "diagnostics"],
+    status: "available",
+    vehiclesInService: 0,
+  },
+  {
+    id: 4,
+    name: "Auto Confort Lille",
+    address: "78 Rue de Paris, 59000 Lille",
+    phone: "03 20 52 48 65",
+    specialties: ["climatisation", "Citroen"],
+    status: "full",
+    vehiclesInService: 3,
+  },
+  {
+    id: 5,
+    name: "Ford Service Bordeaux",
+    address: "230 Avenue d'Arès, 33000 Bordeaux",
+    phone: "05 56 24 12 34",
+    specialties: ["Ford", "utilitaires"],
+    status: "available",
+    vehiclesInService: 1,
+  },
+];
+
+// Filtrer les garages disponibles
+const availableGarages = garages.filter(garage => garage.status === "available");
+
 export default function Maintenance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -169,7 +227,7 @@ export default function Maintenance() {
     vehicleDbId: vehicleParam || "",
     type: "regular",
     description: "",
-    garage: "",
+    garage: "",  // Maintenant c'est l'ID du garage
     date: "",
     estimatedCost: 0,
   });
@@ -188,6 +246,14 @@ export default function Maintenance() {
     
     return matchesSearch;
   });
+
+  // Gérer le changement de sélection pour le garage
+  const handleGarageChange = (value: string) => {
+    setNewMaintenance({
+      ...newMaintenance,
+      garage: value,
+    });
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -340,14 +406,23 @@ export default function Maintenance() {
                   <Label htmlFor="garage" className="text-right">
                     Garage
                   </Label>
-                  <Input
-                    id="garage"
-                    name="garage"
-                    value={newMaintenance.garage}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                    placeholder="Nom du garage"
-                  />
+                  <div className="col-span-3">
+                    <Select 
+                      value={newMaintenance.garage}
+                      onValueChange={handleGarageChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un garage" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableGarages.map((garage) => (
+                          <SelectItem key={garage.id} value={garage.id.toString()}>
+                            {garage.name} - {garage.address}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="estimatedCost" className="text-right">
