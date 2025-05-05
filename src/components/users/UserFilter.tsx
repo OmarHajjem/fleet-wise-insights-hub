@@ -1,30 +1,26 @@
 
 import React, { useState } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { FilterButton } from "@/components/common/FilterButton";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
-type VehicleSearchProps = {
+interface UserFilterProps {
   searchTerm: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchChange: (value: string) => void;
   onFilter?: (selectedFilters: string[]) => void;
-};
+}
 
-export const VehicleSearch = ({ 
-  searchTerm, 
-  onSearchChange, 
-  onFilter 
-}: VehicleSearchProps) => {
+export function UserFilter({ searchTerm, onSearchChange, onFilter }: UserFilterProps) {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
-  // Options de filtre pour les véhicules
+  // Options de filtre pour les utilisateurs
   const filterOptions = [
     { id: 'active', label: 'Actif' },
-    { id: 'maintenance', label: 'En maintenance' },
     { id: 'inactive', label: 'Inactif' },
-    { id: 'low-fuel', label: 'Carburant bas' },
-    { id: 'electric', label: 'Électrique' },
-    { id: 'diesel', label: 'Diesel' },
+    { id: 'admin', label: 'Administrateur' },
+    { id: 'manager', label: 'Gestionnaire' },
+    { id: 'driver', label: 'Conducteur' },
+    { id: 'mechanic', label: 'Mécanicien' },
   ];
 
   const handleFilter = (selectedFilters: string[]) => {
@@ -39,10 +35,10 @@ export const VehicleSearch = ({
       <div className="relative flex-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Rechercher un véhicule..."
+          placeholder="Rechercher un utilisateur..."
           className="pl-8"
           value={searchTerm}
-          onChange={onSearchChange}
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
       <FilterButton 
@@ -52,4 +48,4 @@ export const VehicleSearch = ({
       />
     </div>
   );
-};
+}

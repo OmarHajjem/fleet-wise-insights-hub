@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { vehicleService } from "@/utils/staticData";
 import { toast } from "@/hooks/use-toast";
+import { useDialog } from "@/hooks/useDialog";
 
 type VehicleTableActionsProps = {
   vehicleId: string;
@@ -32,6 +33,7 @@ export const VehicleTableActions = ({
   canMaintain = false,
 }: VehicleTableActionsProps) => {
   const navigate = useNavigate();
+  const { openDialog } = useDialog();
 
   const handleUpdateVehicleStatus = async (id: string, status: "active" | "maintenance" | "inactive") => {
     try {
@@ -50,6 +52,22 @@ export const VehicleTableActions = ({
     }
   };
 
+  const handleViewDetails = () => {
+    toast({
+      title: "Détails du véhicule",
+      description: `Affichage des détails du véhicule ${vehicleId}`,
+    });
+    // Dans une implémentation réelle, cela pourrait ouvrir une modal ou naviguer vers une page de détails
+  };
+
+  const handleEditVehicle = () => {
+    toast({
+      title: "Modification du véhicule",
+      description: `Édition du véhicule ${vehicleId}`,
+    });
+    // Dans une implémentation réelle, cela pourrait ouvrir une modal d'édition
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -61,8 +79,17 @@ export const VehicleTableActions = ({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         
-        {canView && <DropdownMenuItem>Voir les détails</DropdownMenuItem>}
-        {canEdit && <DropdownMenuItem>Modifier</DropdownMenuItem>}
+        {canView && (
+          <DropdownMenuItem onClick={handleViewDetails}>
+            Voir les détails
+          </DropdownMenuItem>
+        )}
+        
+        {canEdit && (
+          <DropdownMenuItem onClick={handleEditVehicle}>
+            Modifier
+          </DropdownMenuItem>
+        )}
         
         {(canEdit || canMaintain) && (
           <>

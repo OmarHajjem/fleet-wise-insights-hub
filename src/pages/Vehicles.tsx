@@ -29,6 +29,7 @@ export default function Vehicles() {
     filteredVehicles,
     userVehicles,
     handleSearch,
+    handleFilter,
     isDriver,
     canEdit,
     canDelete,
@@ -90,7 +91,11 @@ export default function Vehicles() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <VehicleSearch searchTerm={searchTerm} onSearchChange={handleSearch} />
+          <VehicleSearch 
+            searchTerm={searchTerm} 
+            onSearchChange={handleSearch} 
+            onFilter={handleFilter}
+          />
 
           <div className="rounded-md border">
             <Table>
