@@ -45,7 +45,7 @@ const App = () => {
               </AuthCheck>
             } />
             <Route path="/vehicles" element={
-              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+              <AuthCheck requiredRoles={['admin', 'manager', 'driver']}>
                 <Vehicles />
               </AuthCheck>
             } />
@@ -55,7 +55,7 @@ const App = () => {
               </AuthCheck>
             } />
             <Route path="/maintenance" element={
-              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic', 'driver']}>
                 <Maintenance />
               </AuthCheck>
             } />

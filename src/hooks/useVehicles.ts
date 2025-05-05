@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { staticVehicles, staticUsers } from "@/utils/staticData";
 import { useUserRole } from "./useUserRole";
+import { Vehicle } from "@/types/vehicle";
 
 export const useVehicles = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,7 +25,7 @@ export const useVehicles = () => {
       ? staticVehicles.filter(v => v.driver_id === currentUserId)
       : staticVehicles,
     [isDriver, currentUserId]
-  );
+  ) as Vehicle[];
   
   // Filtrer les véhicules selon le terme de recherche
   const filteredVehicles = useMemo(() => {
