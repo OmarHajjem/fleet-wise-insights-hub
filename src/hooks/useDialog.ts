@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 
-type DialogType = 'add' | 'edit' | 'view' | 'delete' | 'confirm' | 'custom';
+type DialogType = 'add' | 'edit' | 'view' | 'delete' | 'confirm' | 'custom' | 'reset';
 
 interface UseDialogResult {
   dialogType: DialogType | null;

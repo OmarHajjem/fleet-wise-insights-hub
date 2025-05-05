@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, UserPlus } from "lucide-react";
+import { Plus, UserPlus, RotateCcw } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -24,11 +24,12 @@ import { toast } from "@/hooks/use-toast";
 import AuthCheck from "@/components/auth/AuthCheck";
 import { UserTable } from "@/components/users/UserTable";
 import { UserFilter } from "@/components/users/UserFilter";
-import { staticUsers, roleService } from "@/utils/staticData";
+import { staticUsers, roleService, usersData, vehiclesData, garagesData } from "@/utils/staticData";
 import { User, UserRole } from "@/types/user";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useDialog } from "@/hooks/useDialog";
 
 // Schéma de validation pour l'ajout d'un utilisateur
 const userFormSchema = z.object({
@@ -43,12 +44,12 @@ const userFormSchema = z.object({
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const { role } = useUserRole();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const canManageUsers = isAdmin || isManager;
   const [isLoading, setIsLoading] = useState(false);
+  const { dialogType, dialogData, isDialogOpen, openDialog, closeDialog } = useDialog();
 
   const form = useForm<z.infer<typeof userFormSchema>>({
     resolver: zodResolver(userFormSchema),
@@ -65,7 +66,7 @@ export default function Users() {
       title: "Utilisateur ajouté",
       description: `${values.firstName} ${values.lastName} a été ajouté en tant que ${values.role}.`,
     });
-    setShowAddDialog(false);
+    closeDialog();
     form.reset();
   };
 
@@ -101,6 +102,29 @@ export default function Users() {
         variant: "destructive"
       });
     }
+  };
+
+  // Réinitialiser toutes les données de l'application
+  const resetAllData = () => {
+    // Vider localstorage et sessionstorage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Réinitialiser les données des utilisateurs, véhicules, garages, etc.
+    // Comme nous utilisons des données statiques pour la démo, nous pouvons simplement
+    // rafraîchir la page pour réinitialiser l'état de l'application
+    toast({
+      title: "Données réinitialisées",
+      description: "Toutes les données de l'application ont été effacées."
+    });
+    
+    // Fermer le dialogue de confirmation
+    closeDialog();
+    
+    // Rafraîchir la page après un court délai
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   // Filtrer les utilisateurs selon le terme de recherche et les filtres
@@ -152,12 +176,20 @@ export default function Users() {
             Gérer les conducteurs et les administrateurs du système
           </p>
         </div>
-        {isAdmin && (
-          <Button className="flex items-center gap-2" onClick={() => setShowAddDialog(true)}>
-            <UserPlus className="h-4 w-4" />
-            Ajouter un utilisateur
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => openDialog('reset')} title="Réinitialiser toutes les données">
+                <RotateCcw className="h-4 w-4" />
+                Réinitialiser les données
+              </Button>
+              <Button className="flex items-center gap-2" onClick={() => openDialog('add')}>
+                <UserPlus className="h-4 w-4" />
+                Ajouter un utilisateur
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -187,7 +219,7 @@ export default function Users() {
       </Card>
 
       {/* Dialogue pour ajouter un utilisateur */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={isDialogOpen && dialogType === 'add'} onOpenChange={() => dialogType === 'add' && closeDialog()}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Ajouter un utilisateur</DialogTitle>
@@ -262,6 +294,22 @@ export default function Users() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue de confirmation pour réinitialiser les données */}
+      <Dialog open={isDialogOpen && dialogType === 'reset'} onOpenChange={() => dialogType === 'reset' && closeDialog()}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Réinitialiser toutes les données</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir réinitialiser toutes les données de l'application ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex items-center space-x-2 pt-4">
+            <Button variant="outline" onClick={closeDialog}>Annuler</Button>
+            <Button variant="destructive" onClick={resetAllData}>Réinitialiser</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
