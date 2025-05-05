@@ -7,10 +7,19 @@ import { Vehicle } from "@/types/vehicle";
 export const useVehicles = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { role, isLoading: roleLoading } = useUserRole();
+  
+  // Define role-based permissions
   const isDriver = role === 'driver';
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
-  const canEdit = isAdmin || isManager || isDriver;
+  const isMechanic = role === 'mechanic';
+  
+  // Define action permissions based on roles
+  const canEdit = isAdmin || isManager;
+  const canDelete = isAdmin;
+  const canView = true; // All roles can view details
+  const canAdd = isAdmin || isManager;
+  const canMaintain = isAdmin || isManager || isMechanic;
   
   // Récupérer l'ID du chauffeur connecté
   const userEmail = sessionStorage.getItem('userEmail') || '';
@@ -55,7 +64,12 @@ export const useVehicles = () => {
     isDriver,
     isAdmin,
     isManager,
+    isMechanic,
     canEdit,
+    canDelete,
+    canView,
+    canAdd,
+    canMaintain,
     roleLoading,
     currentUserId,
     isLoading: false,

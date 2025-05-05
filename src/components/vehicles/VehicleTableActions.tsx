@@ -18,12 +18,18 @@ type VehicleTableActionsProps = {
   vehicleId: string;
   vehicleStatus: "active" | "maintenance" | "inactive";
   canEdit: boolean;
+  canDelete?: boolean;
+  canView?: boolean;
+  canMaintain?: boolean;
 };
 
 export const VehicleTableActions = ({
   vehicleId,
   vehicleStatus,
   canEdit,
+  canDelete = false,
+  canView = true,
+  canMaintain = false,
 }: VehicleTableActionsProps) => {
   const navigate = useNavigate();
 
@@ -54,12 +60,19 @@ export const VehicleTableActions = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem>Voir les détails</DropdownMenuItem>
+        
+        {canView && <DropdownMenuItem>Voir les détails</DropdownMenuItem>}
         {canEdit && <DropdownMenuItem>Modifier</DropdownMenuItem>}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate(`/maintenance?vehicle=${vehicleId}`)}>
-          Planifier maintenance
-        </DropdownMenuItem>
+        
+        {(canEdit || canMaintain) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate(`/maintenance?vehicle=${vehicleId}`)}>
+              Planifier maintenance
+            </DropdownMenuItem>
+          </>
+        )}
+        
         {canEdit && (
           <>
             <DropdownMenuSeparator />
@@ -79,13 +92,16 @@ export const VehicleTableActions = ({
                 Remettre en service
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem 
-              className="text-red-600"
-              onClick={() => handleUpdateVehicleStatus(vehicleId, 'inactive')}
-            >
-              {vehicleStatus === 'inactive' ? "Déjà désactivé" : "Désactiver"}
-            </DropdownMenuItem>
           </>
+        )}
+        
+        {canDelete && (
+          <DropdownMenuItem 
+            className="text-red-600"
+            onClick={() => handleUpdateVehicleStatus(vehicleId, 'inactive')}
+          >
+            {vehicleStatus === 'inactive' ? "Déjà désactivé" : "Désactiver"}
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

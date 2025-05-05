@@ -83,7 +83,15 @@ export default function Garages() {
   const { role } = useUserRole();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
+  const isMechanic = role === 'mechanic';
+  
+  // Define permission flags
   const canManage = isAdmin || isManager;
+  const canAdd = isAdmin || isManager;
+  const canEdit = isAdmin || isManager;
+  const canDelete = isAdmin;
+  const canView = true; // All roles can view details
+  const canScheduleMaintenance = isAdmin || isManager || isMechanic;
 
   const filteredGarages = garages.filter(
     (garage) =>
@@ -104,7 +112,7 @@ export default function Garages() {
               Liste des garages partenaires pour la maintenance de vos véhicules
             </p>
           </div>
-          {canManage && (
+          {canAdd && (
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Ajouter un garage
@@ -202,11 +210,13 @@ export default function Garages() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                              {canManage && <DropdownMenuItem>Modifier</DropdownMenuItem>}
+                              {canView && <DropdownMenuItem>Voir les détails</DropdownMenuItem>}
+                              {canEdit && <DropdownMenuItem>Modifier</DropdownMenuItem>}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem>Planifier une maintenance</DropdownMenuItem>
-                              {canManage && (
+                              {canScheduleMaintenance && (
+                                <DropdownMenuItem>Planifier une maintenance</DropdownMenuItem>
+                              )}
+                              {canDelete && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-red-600">

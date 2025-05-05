@@ -3,14 +3,7 @@ import React from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Car, Loader } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { VehicleStatus } from "./VehicleStatus";
 import { VehicleFuelLevel } from "./VehicleFuelLevel";
 import { VehicleTableActions } from "./VehicleTableActions";
@@ -32,6 +25,9 @@ type VehicleTableProps = {
   isLoading: boolean;
   isDriver: boolean;
   canEdit: boolean;
+  canDelete?: boolean;
+  canView?: boolean;
+  canMaintain?: boolean;
 };
 
 export const VehicleTable = ({
@@ -39,6 +35,9 @@ export const VehicleTable = ({
   isLoading,
   isDriver,
   canEdit,
+  canDelete = false,
+  canView = true,
+  canMaintain = false,
 }: VehicleTableProps) => {
   const getDriverName = (driverId: string | null) => {
     if (!driverId) return "Non assigné";
@@ -103,6 +102,9 @@ export const VehicleTable = ({
               vehicleId={vehicle.id} 
               vehicleStatus={vehicle.status} 
               canEdit={canEdit} 
+              canDelete={canDelete}
+              canView={canView}
+              canMaintain={canMaintain}
             />
           </TableCell>
         </TableRow>

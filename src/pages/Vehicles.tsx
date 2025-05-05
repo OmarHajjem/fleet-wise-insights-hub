@@ -31,6 +31,10 @@ export default function Vehicles() {
     handleSearch,
     isDriver,
     canEdit,
+    canDelete,
+    canView,
+    canAdd,
+    canMaintain,
     isLoading,
     currentUserId,
   } = useVehicles();
@@ -65,7 +69,7 @@ export default function Vehicles() {
             }
           </p>
         </div>
-        {canEdit && (
+        {canAdd && (
           <AddVehicleDialog isDriver={isDriver} currentUserId={currentUserId}>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -108,6 +112,9 @@ export default function Vehicles() {
                   isLoading={isLoading}
                   isDriver={isDriver}
                   canEdit={canEdit}
+                  canDelete={canDelete}
+                  canView={canView}
+                  canMaintain={canMaintain}
                 />
               </TableBody>
             </Table>
