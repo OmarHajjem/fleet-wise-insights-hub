@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, UserPlus, RotateCcw } from "lucide-react";
+import { Plus, UserPlus, RotateCcw, DatabaseIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -115,7 +115,30 @@ export default function Users() {
     // rafraîchir la page pour réinitialiser l'état de l'application
     toast({
       title: "Données réinitialisées",
-      description: "Toutes les données de l'application ont été effacées."
+      description: "Toutes les données ont été effacées. L'application est prête pour se connecter à votre API."
+    });
+    
+    // Fermer le dialogue de confirmation
+    closeDialog();
+    
+    // Rafraîchir la page après un court délai
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  };
+
+  // Préparer l'application pour se connecter à l'API backend
+  const prepareForApi = () => {
+    // Vider localstorage et sessionstorage comme pour resetAllData
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Définir un flag indiquant que l'application doit utiliser l'API au lieu des données statiques
+    localStorage.setItem('useExternalApi', 'true');
+    
+    toast({
+      title: "Préparation terminée",
+      description: "L'application est maintenant configurée pour utiliser votre API backend."
     });
     
     // Fermer le dialogue de confirmation
@@ -182,6 +205,10 @@ export default function Users() {
               <Button variant="outline" className="flex items-center gap-2" onClick={() => openDialog('reset')} title="Réinitialiser toutes les données">
                 <RotateCcw className="h-4 w-4" />
                 Réinitialiser les données
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => openDialog('custom')} title="Préparer pour API">
+                <DatabaseIcon className="h-4 w-4" />
+                Préparer pour API
               </Button>
               <Button className="flex items-center gap-2" onClick={() => openDialog('add')}>
                 <UserPlus className="h-4 w-4" />
@@ -309,6 +336,22 @@ export default function Users() {
           <DialogFooter className="flex items-center space-x-2 pt-4">
             <Button variant="outline" onClick={closeDialog}>Annuler</Button>
             <Button variant="destructive" onClick={resetAllData}>Réinitialiser</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue de préparation pour API */}
+      <Dialog open={isDialogOpen && dialogType === 'custom'} onOpenChange={() => dialogType === 'custom' && closeDialog()}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Préparer pour API externe</DialogTitle>
+            <DialogDescription>
+              Cette action va effacer toutes les données existantes et configurer l'application pour utiliser votre API backend. Voulez-vous continuer ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex items-center space-x-2 pt-4">
+            <Button variant="outline" onClick={closeDialog}>Annuler</Button>
+            <Button variant="default" onClick={prepareForApi}>Confirmer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
