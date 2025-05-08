@@ -1,5 +1,6 @@
 // Import UserRole from types/user.ts instead of redeclaring it
 import { UserRole, UserStatus, User } from "@/types/user";
+import { Vehicle, VehicleStatus } from "@/types/vehicle";
 
 // Re-export the UserRole type
 export type { UserRole, UserStatus };
@@ -184,7 +185,7 @@ class VehicleService {
     return Promise.resolve(true);
   }
   
-  changeVehicleStatus(vehicleId: string, status: string): Promise<boolean> {
+  changeVehicleStatus(vehicleId: string, status: VehicleStatus): Promise<boolean> {
     console.log(`Changement du statut du véhicule ${vehicleId} à ${status}`);
     return Promise.resolve(true);
   }
@@ -194,7 +195,7 @@ class VehicleService {
     return Promise.resolve({id: 'v' + Math.floor(Math.random() * 1000)});
   }
   
-  updateVehicleStatus(vehicleId: string, status: string): Promise<boolean> {
+  updateVehicleStatus(vehicleId: string, status: VehicleStatus): Promise<boolean> {
     return this.changeVehicleStatus(vehicleId, status);
   }
 }
@@ -202,7 +203,7 @@ class VehicleService {
 export const vehicleService = new VehicleService();
 
 // Données de véhicules (simulation)
-export const vehiclesData = [
+const rawVehiclesData = [
   { 
     id: 'v1', 
     name: 'Renault Kangoo E-Tech', 
@@ -294,6 +295,22 @@ export const vehiclesData = [
     fuel_level: 90
   }
 ];
+
+// Convert raw vehicles data to conform to Vehicle type
+export const vehiclesData: Vehicle[] = rawVehiclesData.map(vehicle => ({
+  id: vehicle.id,
+  license_plate: vehicle.license_plate,
+  model: vehicle.model,
+  year: vehicle.year,
+  status: vehicle.status as VehicleStatus, // Type assertion here
+  driver_id: vehicle.driver_id,
+  last_maintenance: vehicle.last_maintenance,
+  fuel_level: vehicle.fuel_level
+}));
+
+// Pour la compatibilité avec les autres fichiers
+export const staticUsers = usersData;
+export const staticVehicles = vehiclesData;
 
 // Données des garages (simulation)
 export const garagesData = [
@@ -441,7 +458,3 @@ export const usersData = [
     avatar_url: null
   }
 ];
-
-// Pour la compatibilité avec les autres fichiers
-export const staticUsers = usersData;
-export const staticVehicles = vehiclesData;

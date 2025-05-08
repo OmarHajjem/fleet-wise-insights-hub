@@ -1,5 +1,5 @@
 
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Déterminer si nous utilisons des données fictives ou réelles
 export const useRealApi = (): boolean => {
@@ -19,7 +19,7 @@ export const axiosInstance = axios.create({
 
 // Intercepteur pour les requêtes
 axiosInstance.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // Ajoutez ici la logique pour les tokens d'authentification si nécessaire
     const token = localStorage.getItem('authToken');
     if (token && config.headers) {
