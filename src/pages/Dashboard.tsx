@@ -6,13 +6,19 @@ import { Progress } from "@/components/ui/progress";
 import VehiclesMap from "@/components/VehiclesMap";
 import { useState, useEffect } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
-import { staticVehicles, staticUsers, usersData } from "@/utils/staticData";
+import { staticVehicles, staticUsers, usersData, rawVehiclesData } from "@/utils/staticData";
+import { Vehicle } from "@/types/vehicle";
 
 export default function Dashboard() {
   const { role } = useUserRole();
   const [assignedVehicles, setAssignedVehicles] = useState<any[]>([]);
   const [maintenanceCount, setMaintenanceCount] = useState(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // Helper function to get the extended vehicle data
+  const getFullVehicleInfo = (vehicleId: string) => {
+    return rawVehiclesData.find(v => v.id === vehicleId);
+  };
   
   useEffect(() => {
     // Simuler la récupération des informations utilisateur et véhicules en fonction du rôle
@@ -25,7 +31,14 @@ export default function Dashboard() {
         setCurrentUser(user);
         // Filtrer les véhicules assignés à ce chauffeur
         const vehicles = staticVehicles.filter(v => v.driver_id === user.id);
-        setAssignedVehicles(vehicles);
+        
+        // Convert the filtered vehicles to the extended format with additional properties
+        const fullVehicles = vehicles.map(v => {
+          const fullInfo = getFullVehicleInfo(v.id);
+          return fullInfo || v;
+        });
+        
+        setAssignedVehicles(fullVehicles);
         
         // Compter le nombre de maintenances planifiées pour ces véhicules
         const maintenance = vehicles.filter(v => v.status === 'maintenance').length;
@@ -33,7 +46,13 @@ export default function Dashboard() {
       }
     } else {
       // Pour les autres rôles, on montre tous les véhicules
-      setAssignedVehicles(staticVehicles);
+      // Convert to the extended format with additional properties
+      const fullVehicles = staticVehicles.map(v => {
+        const fullInfo = getFullVehicleInfo(v.id);
+        return fullInfo || v;
+      });
+      
+      setAssignedVehicles(fullVehicles);
       setMaintenanceCount(staticVehicles.filter(v => v.status === 'maintenance').length);
     }
   }, [role]);
@@ -140,12 +159,12 @@ function DriverDashboard({ vehicles, maintenanceCount, user }: { vehicles: any[]
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {vehicles.map((vehicle) => (
+                {vehicles.map((vehicle: any) => (
                   <div key={vehicle.id} className="border-b pb-4">
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
                         <Car className="h-5 w-5 text-fleet-600" />
-                        <h3 className="font-medium">{vehicle.name}</h3>
+                        <h3 className="font-medium">{vehicle.model || 'Véhicule'}</h3>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         vehicle.status === 'active' 
@@ -169,11 +188,11 @@ function DriverDashboard({ vehicles, maintenanceCount, user }: { vehicles: any[]
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Dernière maintenance</p>
-                        <p className="font-medium">{vehicle.last_maintenance}</p>
+                        <p className="font-medium">{vehicle.last_maintenance || 'Non renseigné'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Prochaine maintenance</p>
-                        <p className="font-medium">{vehicle.nextMaintenance}</p>
+                        <p className="font-medium">{vehicle.nextMaintenance || 'Non planifiée'}</p>
                       </div>
                     </div>
                     <div className="mt-3">
@@ -278,7 +297,7 @@ function MechanicDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {staticVehicles
+            {rawVehiclesData
               .filter(v => v.status === 'maintenance')
               .map(vehicle => (
                 <div key={vehicle.id} className="flex items-start gap-4 p-3 border rounded-md">
@@ -286,7 +305,7 @@ function MechanicDashboard() {
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-medium">{vehicle.name}</h3>
+                        <h3 className="font-medium">{vehicle.model}</h3>
                         <p className="text-sm text-muted-foreground">{vehicle.license_plate}</p>
                       </div>
                       <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800">
@@ -296,17 +315,22 @@ function MechanicDashboard() {
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <div>
                         <p className="text-xs text-muted-foreground">Conducteur</p>
-                        <p className="text-sm">{vehicle.driver || "Non assigné"}</p>
+                        <p className="text-sm">
+                          {(() => {
+                            const driver = staticUsers.find(u => u.id === vehicle.driver_id);
+                            return driver ? `${driver.firstName} ${driver.lastName}` : "Non assigné";
+                          })()}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Début maintenance</p>
-                        <p className="text-sm">{vehicle.last_maintenance}</p>
+                        <p className="text-sm">{vehicle.last_maintenance || 'Non renseigné'}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
-            {staticVehicles.filter(v => v.status === 'maintenance').length === 0 && (
+            {rawVehiclesData.filter(v => v.status === 'maintenance').length === 0 && (
               <div className="text-center py-6">
                 <p className="text-muted-foreground">Aucun véhicule en maintenance actuellement.</p>
               </div>
