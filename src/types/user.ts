@@ -11,6 +11,8 @@ export interface User {
   status: UserStatus;
   assignedVehicle: string | null;
   lastActive: string | null;
+  avatar_url?: string | null;
+  created_at?: string;
 }
 
 export const roleLabels = {

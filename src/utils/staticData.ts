@@ -114,7 +114,7 @@ const staticVehicles: Vehicle[] = rawVehiclesData.map(vehicle => ({
   model: vehicle.model,
   license_plate: vehicle.license_plate,
   year: vehicle.year,
-  status: vehicle.status,
+  status: vehicle.status as VehicleStatus,
   driver_id: vehicle.driver_id,
   last_maintenance: vehicle.last_maintenance,
   fuel_level: vehicle.fuel_level
@@ -129,6 +129,8 @@ const staticUsers: User[] = [
     lastName: "Dupont",
     role: "driver",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-01-15"
   },
   {
@@ -138,6 +140,8 @@ const staticUsers: User[] = [
     lastName: "Martin",
     role: "driver",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-02-20"
   },
   {
@@ -147,6 +151,8 @@ const staticUsers: User[] = [
     lastName: "Bernard",
     role: "driver",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-03-10"
   },
   {
@@ -156,6 +162,8 @@ const staticUsers: User[] = [
     lastName: "Petit",
     role: "driver",
     status: "inactive",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-01-25"
   },
   {
@@ -165,6 +173,8 @@ const staticUsers: User[] = [
     lastName: "Dubois",
     role: "driver",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-04-05"
   },
   {
@@ -174,6 +184,8 @@ const staticUsers: User[] = [
     lastName: "Système",
     role: "admin",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-01-01"
   },
   {
@@ -183,6 +195,8 @@ const staticUsers: User[] = [
     lastName: "Gestion",
     role: "manager",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-01-02"
   },
   {
@@ -192,6 +206,8 @@ const staticUsers: User[] = [
     lastName: "Technic",
     role: "mechanic",
     status: "active",
+    assignedVehicle: null,
+    lastActive: null,
     created_at: "2023-01-03"
   }
 ];
@@ -211,6 +227,34 @@ const usersData = [
     status: "active"
   },
   // ... other users with the same structure
+];
+
+// Mock garage data
+const garagesData = [
+  {
+    id: "g001",
+    name: "Garage Central Paris",
+    address: "123 Rue de Rivoli, 75001 Paris",
+    phone: "+33123456789",
+    specialties: ["mechanical", "electrical", "body work"],
+    status: "available"
+  },
+  {
+    id: "g002",
+    name: "Auto Service Lyon",
+    address: "45 Avenue Berthelot, 69007 Lyon",
+    phone: "+33987654321",
+    specialties: ["mechanical", "tire service"],
+    status: "available"
+  },
+  {
+    id: "g003",
+    name: "Mécanique Rapide Marseille",
+    address: "78 Boulevard Michelet, 13008 Marseille",
+    phone: "+33678912345",
+    specialties: ["emergency repair", "mechanical"],
+    status: "available"
+  }
 ];
 
 // Mock authentication service
@@ -287,12 +331,105 @@ const roleService = {
 
 // Vehicle service mock functions
 const vehicleService = {
-  // Functions that would normally interact with an API
+  getAllVehicles: async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return staticVehicles;
+  },
+  
+  getVehicleById: async (id: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const vehicle = rawVehiclesData.find(v => v.id === id);
+    if (!vehicle) throw new Error("Vehicle not found");
+    return vehicle;
+  },
+  
+  getUserVehicles: async (userId: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 400));
+    return staticVehicles.filter(v => v.driver_id === userId);
+  },
+  
+  updateVehicleStatus: async (id: string, status: "active" | "maintenance" | "inactive") => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 600));
+    const vehicleIndex = staticVehicles.findIndex(v => v.id === id);
+    if (vehicleIndex === -1) throw new Error("Vehicle not found");
+    
+    staticVehicles[vehicleIndex].status = status as VehicleStatus;
+    return staticVehicles[vehicleIndex];
+  },
+  
+  addVehicle: async (vehicleData: Partial<Vehicle>) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const newVehicle: Vehicle = {
+      id: `v${staticVehicles.length + 1}`.padStart(4, '0'),
+      model: vehicleData.model || "",
+      license_plate: vehicleData.license_plate || "",
+      year: vehicleData.year || new Date().getFullYear(),
+      status: vehicleData.status || "active",
+      driver_id: vehicleData.driver_id || null,
+      last_maintenance: null,
+      fuel_level: vehicleData.fuel_level || 100
+    };
+    
+    staticVehicles.push(newVehicle);
+    return newVehicle;
+  }
 };
 
 // Simplified profile service
 const profileService = {
-  // Profile service functions
+  getProfile: async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const userEmail = sessionStorage.getItem('userEmail');
+    const user = staticUsers.find(u => u.email === userEmail);
+    
+    if (!user) return null;
+    
+    return {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: "+33612345678", // Mock data
+      avatar_url: null
+    };
+  },
+  
+  updateProfile: async (profileData: { firstName?: string, lastName?: string, phone?: string }) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 600));
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userIndex = staticUsers.findIndex(u => u.email === userEmail);
+    
+    if (userIndex === -1) throw new Error("User not found");
+    
+    if (profileData.firstName) staticUsers[userIndex].firstName = profileData.firstName;
+    if (profileData.lastName) staticUsers[userIndex].lastName = profileData.lastName;
+    
+    return { success: true };
+  },
+  
+  uploadAvatar: async (file: File) => {
+    // Simulate API delay and file upload
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // In a real app, this would upload to storage and return the URL
+    const avatarUrl = URL.createObjectURL(file);
+    
+    // Update user avatar in mock data
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userIndex = staticUsers.findIndex(u => u.email === userEmail);
+    
+    if (userIndex !== -1) {
+      staticUsers[userIndex].avatar_url = avatarUrl;
+    }
+    
+    return avatarUrl;
+  }
 };
 
 // Finally, export all data and services
@@ -301,6 +438,7 @@ export {
   staticVehicles,
   staticUsers,
   usersData,
+  garagesData,
   authService,
   roleService,
   vehicleService,

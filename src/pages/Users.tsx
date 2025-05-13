@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import AuthCheck from "@/components/auth/AuthCheck";
 import { UserTable } from "@/components/users/UserTable";
 import { UserFilter } from "@/components/users/UserFilter";
-import { staticUsers, roleService, usersData, vehiclesData, garagesData } from "@/utils/staticData";
+import { staticUsers, roleService, usersData, garagesData } from "@/utils/staticData";
 import { User, UserRole } from "@/types/user";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
