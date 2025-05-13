@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,13 +28,33 @@ export default function Auth() {
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
     const checkSession = async () => {
-      const { user } = await authService.getUser();
-      if (user) {
-        navigate("/dashboard");
+      try {
+        const { user } = await authService.getUser();
+        if (user) {
+          console.log("Utilisateur déjà connecté, redirection vers /dashboard");
+          navigate("/dashboard", { replace: true });
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de session:", error);
       }
     };
 
     checkSession();
+
+    // Ajouter un listener pour les changements d'état d'authentification
+    const subscription = authService.onAuthStateChange((user) => {
+      if (user) {
+        console.log("État d'authentification changé, utilisateur connecté");
+        navigate("/dashboard", { replace: true });
+      }
+    });
+
+    // Nettoyer le listener lors du démontage du composant
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -41,14 +62,21 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      await authService.signIn(loginEmail, loginPassword);
+      // Log pour le débogage
+      console.log("Tentative de connexion avec:", loginEmail);
+      
+      const result = await authService.signIn(loginEmail, loginPassword);
+      console.log("Résultat de la connexion:", result);
       
       toast({
         title: "Connexion réussie",
         description: "Bienvenue sur votre tableau de bord."
       });
-      navigate("/dashboard");
+      
+      // La redirection sera gérée par le listener onAuthStateChange
     } catch (error: any) {
+      console.error("Erreur lors de la connexion:", error);
+      
       let errorMessage = "Une erreur est survenue lors de la connexion.";
       
       if (error.message) {

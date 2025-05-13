@@ -44,6 +44,29 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
     };
 
     checkAuth();
+    
+    // Add listener for auth state changes
+    const subscription = authService.onAuthStateChange((updatedUser) => {
+      setUser(updatedUser);
+      
+      if (updatedUser) {
+        if (!requiredRoles || requiredRoles.length === 0) {
+          setHasAccess(true);
+        } else {
+          const userRole = updatedUser.role;
+          setHasAccess(requiredRoles.includes(userRole));
+        }
+      } else {
+        setHasAccess(false);
+      }
+      setLoading(false);
+    });
+    
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
   }, [requiredRoles]);
 
   if (loading) {

@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import AuthCheck from "./components/auth/AuthCheck";
+import { useState, useEffect } from "react";
 import { authService } from "./utils/staticData";
 
 const queryClient = new QueryClient({
@@ -27,7 +28,42 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const { user } = authService.getUser();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { user } = await authService.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error("Erreur lors de la vérification de l'authentification:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Setup auth state change listener
+    const subscription = authService.onAuthStateChange((updatedUser) => {
+      setUser(updatedUser);
+    });
+    
+    checkAuth();
+    
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, []);
+  
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -36,7 +72,7 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
           
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={
