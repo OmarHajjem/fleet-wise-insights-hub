@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,31 +24,31 @@ export default function Auth() {
   const [signupFirstName, setSignupFirstName] = useState("");
   const [signupLastName, setSignupLastName] = useState("");
 
-  // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
+    console.log("Auth: Component mounted, checking existing session...");
+    
     const checkSession = async () => {
       try {
         const { user } = await authService.getUser();
         if (user) {
-          console.log("Utilisateur déjà connecté, redirection vers /dashboard");
+          console.log("Auth: User already logged in, redirecting to dashboard");
           navigate("/dashboard", { replace: true });
         }
       } catch (error) {
-        console.error("Erreur lors de la vérification de session:", error);
+        console.error("Auth: Error checking session:", error);
       }
     };
 
     checkSession();
 
-    // Ajouter un listener pour les changements d'état d'authentification
     const subscription = authService.onAuthStateChange((user) => {
+      console.log("Auth: Auth state changed:", user);
       if (user) {
-        console.log("État d'authentification changé, utilisateur connecté");
+        console.log("Auth: User logged in, redirecting to dashboard");
         navigate("/dashboard", { replace: true });
       }
     });
 
-    // Nettoyer le listener lors du démontage du composant
     return () => {
       if (subscription && typeof subscription.unsubscribe === 'function') {
         subscription.unsubscribe();
@@ -62,11 +61,10 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      // Log pour le débogage
-      console.log("Tentative de connexion avec:", loginEmail);
+      console.log("Auth: Attempting login with:", loginEmail);
       
       const result = await authService.signIn(loginEmail, loginPassword);
-      console.log("Résultat de la connexion:", result);
+      console.log("Auth: Login result:", result);
       
       toast({
         title: "Connexion réussie",
@@ -75,7 +73,7 @@ export default function Auth() {
       
       // La redirection sera gérée par le listener onAuthStateChange
     } catch (error: any) {
-      console.error("Erreur lors de la connexion:", error);
+      console.error("Auth: Login error:", error);
       
       let errorMessage = "Une erreur est survenue lors de la connexion.";
       

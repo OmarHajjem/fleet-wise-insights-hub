@@ -17,26 +17,30 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("AuthCheck: Starting auth check...");
+    
     const checkAuth = async () => {
       try {
-        // Check if user is logged in
         const { user } = await authService.getUser();
+        console.log("AuthCheck: User retrieved:", user);
         setUser(user);
         
         if (user) {
-          // If no specific roles are required, any authenticated user has access
           if (!requiredRoles || requiredRoles.length === 0) {
+            console.log("AuthCheck: No specific roles required, granting access");
             setHasAccess(true);
           } else {
-            // Check if user has the required role
             const userRole = user.role;
-            setHasAccess(requiredRoles.includes(userRole));
+            const hasRequiredRole = requiredRoles.includes(userRole);
+            console.log("AuthCheck: User role:", userRole, "Required roles:", requiredRoles, "Has access:", hasRequiredRole);
+            setHasAccess(hasRequiredRole);
           }
         } else {
+          console.log("AuthCheck: No user found");
           setHasAccess(false);
         }
       } catch (error) {
-        console.error("Erreur lors de la vérification des droits:", error);
+        console.error("AuthCheck: Error during auth check:", error);
         setHasAccess(false);
       } finally {
         setLoading(false);
@@ -45,8 +49,8 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
 
     checkAuth();
     
-    // Add listener for auth state changes
     const subscription = authService.onAuthStateChange((updatedUser) => {
+      console.log("AuthCheck: Auth state changed:", updatedUser);
       setUser(updatedUser);
       
       if (updatedUser) {
@@ -69,6 +73,8 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
     };
   }, [requiredRoles]);
 
+  console.log("AuthCheck: Current state - loading:", loading, "user:", user, "hasAccess:", hasAccess);
+
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -81,8 +87,8 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
   }
 
   if (!user) {
-    // Rediriger vers la page de connexion
-    navigate("/auth");
+    console.log("AuthCheck: No user, redirecting to auth");
+    navigate("/auth", { replace: true });
     return null;
   }
 
@@ -106,7 +112,7 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children, requiredRoles }) => {
     );
   }
 
-  // L'utilisateur est authentifié et a les droits nécessaires
+  console.log("AuthCheck: Access granted, rendering children");
   return <>{children}</>;
 };
 

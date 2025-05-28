@@ -32,12 +32,16 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
+    console.log("App: Checking authentication state...");
+    
     const checkAuth = async () => {
       try {
         const { user } = await authService.getUser();
+        console.log("App: User found:", user);
         setUser(user);
       } catch (error) {
-        console.error("Erreur lors de la vérification de l'authentification:", error);
+        console.error("App: Error checking auth:", error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -45,7 +49,9 @@ const App = () => {
     
     // Setup auth state change listener
     const subscription = authService.onAuthStateChange((updatedUser) => {
+      console.log("App: Auth state changed, user:", updatedUser);
       setUser(updatedUser);
+      setLoading(false);
     });
     
     checkAuth();
@@ -56,6 +62,8 @@ const App = () => {
       }
     };
   }, []);
+  
+  console.log("App: Current state - loading:", loading, "user:", user);
   
   if (loading) {
     return (
@@ -71,51 +79,55 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
           <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
           
-          <Route element={<MainLayout />}>
-            <Route path="/dashboard" element={
-              <AuthCheck>
-                <Dashboard />
-              </AuthCheck>
-            } />
-            <Route path="/vehicles" element={
-              <AuthCheck requiredRoles={['admin', 'manager', 'driver']}>
-                <Vehicles />
-              </AuthCheck>
-            } />
-            <Route path="/users" element={
-              <AuthCheck requiredRoles={['admin', 'manager']}>
-                <Users />
-              </AuthCheck>
-            } />
-            <Route path="/maintenance" element={
-              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic', 'driver']}>
-                <Maintenance />
-              </AuthCheck>
-            } />
-            <Route path="/garages" element={
-              <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
-                <Garages />
-              </AuthCheck>
-            } />
-            <Route path="/notifications" element={
-              <AuthCheck>
-                <Notifications />
-              </AuthCheck>
-            } />
-            <Route path="/settings" element={
-              <AuthCheck requiredRoles={['admin']}>
-                <Settings />
-              </AuthCheck>
-            } />
-            <Route path="/profile" element={
-              <AuthCheck>
-                <Profile />
-              </AuthCheck>
-            } />
-          </Route>
+          {user ? (
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={
+                <AuthCheck>
+                  <Dashboard />
+                </AuthCheck>
+              } />
+              <Route path="/vehicles" element={
+                <AuthCheck requiredRoles={['admin', 'manager', 'driver']}>
+                  <Vehicles />
+                </AuthCheck>
+              } />
+              <Route path="/users" element={
+                <AuthCheck requiredRoles={['admin', 'manager']}>
+                  <Users />
+                </AuthCheck>
+              } />
+              <Route path="/maintenance" element={
+                <AuthCheck requiredRoles={['admin', 'manager', 'mechanic', 'driver']}>
+                  <Maintenance />
+                </AuthCheck>
+              } />
+              <Route path="/garages" element={
+                <AuthCheck requiredRoles={['admin', 'manager', 'mechanic']}>
+                  <Garages />
+                </AuthCheck>
+              } />
+              <Route path="/notifications" element={
+                <AuthCheck>
+                  <Notifications />
+                </AuthCheck>
+              } />
+              <Route path="/settings" element={
+                <AuthCheck requiredRoles={['admin']}>
+                  <Settings />
+                </AuthCheck>
+              } />
+              <Route path="/profile" element={
+                <AuthCheck>
+                  <Profile />
+                </AuthCheck>
+              } />
+            </Route>
+          ) : (
+            <Route path="*" element={<Navigate to="/auth" replace />} />
+          )}
           
           <Route path="*" element={<NotFound />} />
         </Routes>
